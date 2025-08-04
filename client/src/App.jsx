@@ -4,6 +4,7 @@ import Example from "./component/Example";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Layout from "./component/Layout";
+import Login from "./pages/Login/Login";
 
 function App() {
   return (
@@ -12,6 +13,8 @@ function App() {
         <Route path="/" element={<Layout />}>
           <></>
         </Route>
+        {/* <Route path="/register" element={<Register />} /> */}
+        <Route path="/login" element={<Login />} />
       </Routes>
     </BrowserRouter>
   );

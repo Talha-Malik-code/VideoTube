@@ -1,17 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
 export default function ThemeToggle() {
   const [darkMode, setDarkMode] = useState(() => {
-    return localStorage.getItem('theme') === 'dark';
+    return localStorage.getItem("theme") === "light" ? false : true;
   });
 
   useEffect(() => {
     if (darkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
     } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
     }
   }, [darkMode]);
 
@@ -20,7 +20,7 @@ export default function ThemeToggle() {
       onClick={() => setDarkMode(!darkMode)}
       className="bg-yellow-200 dark:bg-gray-800 dark:text-white text-sm p-2 rounded"
     >
-      {darkMode ? '🌙 Dark Mode' : '☀️ Light Mode'}
+      {darkMode ? "🌙 Dark Mode" : "☀️ Light Mode"}
     </button>
   );
 }
