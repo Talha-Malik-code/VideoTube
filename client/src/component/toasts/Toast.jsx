@@ -1,6 +1,6 @@
 import { toast } from "react-toastify";
 
-const newToast = (type, message) => {
+const NewToast = (type, message) => {
   toast[type](<div style={{ color: "#ffffff" }}>{message}</div>, {
     style: {
       backgroundColor: "#010101", // bg: rgb(1,1,1)
@@ -15,4 +15,4 @@ const newToast = (type, message) => {
   });
 };
 
-export default newToast;
+export default NewToast;
