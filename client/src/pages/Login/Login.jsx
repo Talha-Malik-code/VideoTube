@@ -3,14 +3,46 @@ import Logo from "../../component/Logo";
 import ThemeToggle from "../../component/ThemeToggle";
 import Button from "../../component/Button";
 import Input from "../../component/Input";
-import FileInput from "../../component/FileInput";
+import { validateLoginForm } from "../../../utils/validateLoginForm";
 
 const Login = () => {
-  const [profileImg, setProfileImg] = useState(null);
-  const [coverImg, setCoverImg] = useState(null);
+  const [error, setError] = useState(null);
+  const [credentials, setCredentials] = useState({
+    identity: "",
+    password: "",
+  });
+
+  function handleChange(e) {
+    e.preventDefault();
+    const { name, value } = e.target;
+
+    setCredentials((prevCredentials) => ({
+      ...prevCredentials,
+      [name]: value,
+    }));
+
+    setError((prevError) => ({
+      ...prevError,
+      [name]: null,
+    }));
+  }
+
+  function handleSubmit(e) {
+    e.preventDefault();
+
+    const validationErrors = validateLoginForm(credentials);
+    setError(validationErrors);
+
+    if (Object.keys(validationErrors).length === 0) {
+      console.log("Form submutted: ", { credentials });
+    }
+  }
 
   return (
-    <div className="h-screen overflow-y-hidden bg-gray-100 text-gray-900 dark:bg-[#121212] dark:text-white">
+    <form
+      onSubmit={handleSubmit}
+      className="h-screen overflow-y-auto bg-gray-100 text-gray-900 dark:bg-[#121212] dark:text-white"
+    >
       <div className="absolute right-4 top-4 z-10">
         <ThemeToggle />
       </div>
@@ -21,62 +53,27 @@ const Login = () => {
         <div className="mb-6 w-full text-center text-2xl font-semibold uppercase">
           Video Tube
         </div>
-        <Input label="Email*" type="email" placeholder="Enter your email" />
         <Input
-          label="Username*"
+          label="Username or Email*"
           type="text"
-          placeholder="Enter your username"
+          placeholder="Enter your username or email"
+          name="identity"
+          onChange={handleChange}
+          error={error?.identity}
         />
         <Input
           label="Password*"
           type="password"
           placeholder="Enter your Password"
+          name="password"
+          onChange={handleChange}
+          error={error?.password}
         />
-        <Input
-          label="Confirm Password*"
-          type="password"
-          placeholder="Enter your Confirm Password"
-        />
-        {/* <label htmlFor="profile">
-          <div className="flex">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-              className="size-6"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M12 4.5v15m7.5-7.5h-15"
-              />
-            </svg>
-            <span className="ml-2">Upload Profile</span>
-          </div>
-        </label>
-        <input
-          className="sr-only"
-          type="file"
-          name="profile"
-          id="profile"
-          accept="image/*"
-        /> */}
-        <FileInput
-          label="Upload Profile Image"
-          onChange={(e) => setProfileImg(e.target.files[0])}
-          file={profileImg}
-        />
-        <FileInput
-          className="mt-1"
-          label="Upload Cover Image"
-          onChange={(e) => setCoverImg(e.target.files[0])}
-          file={coverImg}
-        />
-        <Button className="mt-6">Sign in with Email</Button>
+        <Button type="submit" className="mt-6">
+          Sign in
+        </Button>
       </div>
-    </div>
+    </form>
   );
 };
 

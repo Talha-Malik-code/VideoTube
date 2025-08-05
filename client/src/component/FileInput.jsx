@@ -1,15 +1,20 @@
+import { Check } from "lucide-react";
 import React, { useId } from "react";
 
-const FileInput = React.forwardRef(function FileInput({
-  label = "Upload a file",
-  className = "",
-  file = null,
-  ...props
-}) {
+const FileInput = React.forwardRef(function FileInput(
+  {
+    label = "Upload a file",
+    className = "",
+    file = null,
+    error = null,
+    ...props
+  },
+  ref
+) {
   const id = useId();
   return (
     <div>
-      <label htmlFor={id}>
+      <label htmlFor={id} className="flex items-center gap-1">
         <span
           className={`flex gap-2 max-w-fit rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-black dark:border-white dark:bg-transparent dark:text-white ${className}`}
         >
@@ -52,6 +57,7 @@ const FileInput = React.forwardRef(function FileInput({
           )}
           {file ? file.name : label}
         </span>
+        {!!file && <Check color="green" />}
       </label>
       <input
         className="sr-only"
@@ -59,7 +65,9 @@ const FileInput = React.forwardRef(function FileInput({
         id={id}
         accept="image/*"
         {...props}
+        ref={ref}
       />
+      {error && !file && <p className="text-red-500">*{error}</p>}
     </div>
   );
 });

@@ -1,7 +1,14 @@
 import React, { useId, useState } from "react";
 
 const Input = React.forwardRef(function Input(
-  { label, type = "text", placeholder = "", className = "", ...props },
+  {
+    label,
+    type = "text",
+    placeholder = "",
+    className = "",
+    error = null,
+    ...props
+  },
   ref
 ) {
   const id = useId();
@@ -89,6 +96,7 @@ const Input = React.forwardRef(function Input(
           </button>
         )}
       </div>
+      {!!error && <p className="text-red-500">*{error}</p>}
     </div>
   );
 });

@@ -4,6 +4,7 @@ import Example from "./component/Example";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Layout from "./component/Layout";
+import Register from "./pages/Register/Register";
 import Login from "./pages/Login/Login";
 
 function App() {
@@ -13,8 +14,8 @@ function App() {
         <Route path="/" element={<Layout />}>
           <></>
         </Route>
-        {/* <Route path="/register" element={<Register />} /> */}
         <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
       </Routes>
     </BrowserRouter>
   );
