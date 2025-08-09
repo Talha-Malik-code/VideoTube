@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import Logo from "../../component/Logo";
 import ThemeToggle from "../../component/ThemeToggle";
 import Button from "../../component/Button";
-import Input from "../../component/Input";
-import FileInput from "../../component/FileInput";
+import Input from "../../component/authInputComponents/Input";
+import FileInput from "../../component/authInputComponents/FileInput";
 import { Check, X } from "lucide-react";
 import { validateRegistrationForm } from "../../../utils/validateRegistrationForm";
 

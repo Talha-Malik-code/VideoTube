@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import Logo from "../../component/Logo";
 import ThemeToggle from "../../component/ThemeToggle";
 import Button from "../../component/Button";
-import Input from "../../component/Input";
+import Input from "../../component/authInputComponents/Input";
 import { validateLoginForm } from "../../../utils/validateLoginForm";
 
 const Login = () => {
