@@ -14,7 +14,7 @@ const FileInput = React.forwardRef(function FileInput(
   const id = useId();
   return (
     <div>
-      <label htmlFor={id} className="flex items-center gap-1">
+      <label htmlFor={id} className="flex items-center gap-1 cursor-pointer">
         <span
           className={`flex gap-2 max-w-fit rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-black dark:border-white dark:bg-transparent dark:text-white ${className}`}
         >

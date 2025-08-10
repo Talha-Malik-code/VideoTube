@@ -3,15 +3,26 @@ import NewToast from "./component/toasts/Toast";
 async function updateWithFormData(
   path,
   formData,
-  cradential = {},
+  credential = {},
   methodType = "POST"
 ) {
   try {
+    console.log(formData);
+
     const response = await fetch(`/api/v1/${path}`, {
       method: methodType,
       body: formData,
-      ...cradential,
+      credentials: "include",
+      ...credential,
     });
+
+    // Check if response is ok before parsing JSON
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Server error:", response.status, errorText);
+      NewToast("error", `Server error: ${response.status}`);
+      return null;
+    }
 
     const data = await response.json();
 
@@ -20,9 +31,11 @@ async function updateWithFormData(
       return data.data;
     } else {
       NewToast("error", data.message);
+      return null;
     }
   } catch (error) {
     console.error(error);
+    NewToast("error", "Network error. Please try again.");
     return null;
   }
 }
@@ -35,6 +48,14 @@ async function fetchData(path, header = {}) {
       headers: header,
     });
 
+    // Check if response is ok before parsing JSON
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("Server error:", res.status, errorText);
+      NewToast("error", `Server error: ${res.status}`);
+      return null;
+    }
+
     const data = await res.json();
 
     if (data.success) {
@@ -43,6 +64,7 @@ async function fetchData(path, header = {}) {
     } else {
       console.log(data);
       NewToast("error", data.message);
+      return null;
     }
   } catch (error) {
     console.error(error);
@@ -62,6 +84,14 @@ async function updateData(path, content, methodType = "PATCH") {
       credentials: "include",
     });
 
+    // Check if response is ok before parsing JSON
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("Server error:", res.status, errorText);
+      NewToast("error", `Server error: ${res.status}`);
+      return null;
+    }
+
     const data = await res.json();
 
     if (data.success) {
@@ -75,6 +105,7 @@ async function updateData(path, content, methodType = "PATCH") {
   } catch (error) {
     console.error(error);
     NewToast("warn", "Try after sometime");
+    return null;
   }
 }
 

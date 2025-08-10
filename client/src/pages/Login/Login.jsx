@@ -1,11 +1,18 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Logo from "../../component/Logo";
 import ThemeToggle from "../../component/ThemeToggle";
 import Button from "../../component/Button";
 import Input from "../../component/authInputComponents/Input";
 import { validateLoginForm } from "../../../utils/validateLoginForm";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { loginUser } from "../../app/features/userSlice";
 
 const Login = () => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const isLoggedIn = useSelector((state) => state.user.isLoggedIn);
+  const isLoading = useSelector((state) => state.user.status === "loading");
   const [error, setError] = useState(null);
   const [credentials, setCredentials] = useState({
     identity: "",
@@ -13,7 +20,6 @@ const Login = () => {
   });
 
   function handleChange(e) {
-    e.preventDefault();
     const { name, value } = e.target;
 
     setCredentials((prevCredentials) => ({
@@ -21,10 +27,13 @@ const Login = () => {
       [name]: value,
     }));
 
-    setError((prevError) => ({
-      ...prevError,
-      [name]: null,
-    }));
+    // Clear specific field error
+    if (error && error[name]) {
+      setError((prevError) => ({
+        ...prevError,
+        [name]: null,
+      }));
+    }
   }
 
   function handleSubmit(e) {
@@ -34,9 +43,21 @@ const Login = () => {
     setError(validationErrors);
 
     if (Object.keys(validationErrors).length === 0) {
-      console.log("Form submutted: ", { credentials });
+      const payload = {
+        email: credentials.identity,
+        password: credentials.password,
+      };
+      dispatch(loginUser(payload));
     }
   }
+
+  useEffect(() => {
+    console.log(isLoggedIn);
+
+    if (isLoggedIn) {
+      navigate("/");
+    }
+  }, [isLoggedIn, navigate]);
 
   return (
     <form
@@ -58,6 +79,7 @@ const Login = () => {
           type="text"
           placeholder="Enter your username or email"
           name="identity"
+          value={credentials.identity}
           onChange={handleChange}
           error={error?.identity}
         />
@@ -66,11 +88,12 @@ const Login = () => {
           type="password"
           placeholder="Enter your Password"
           name="password"
+          value={credentials.password}
           onChange={handleChange}
           error={error?.password}
         />
-        <Button type="submit" className="mt-6">
-          Sign in
+        <Button type="submit" className="mt-6" disabled={isLoading}>
+          {isLoading ? "Signing in..." : "Sign in"}
         </Button>
       </div>
     </form>

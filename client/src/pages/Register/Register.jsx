@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Logo from "../../component/Logo";
 import ThemeToggle from "../../component/ThemeToggle";
 import Button from "../../component/Button";
@@ -6,14 +6,22 @@ import Input from "../../component/authInputComponents/Input";
 import FileInput from "../../component/authInputComponents/FileInput";
 import { Check, X } from "lucide-react";
 import { validateRegistrationForm } from "../../../utils/validateRegistrationForm";
+import { useDispatch, useSelector } from "react-redux";
+import { registerUser } from "../../app/features/userSlice";
+import { useNavigate } from "react-router-dom";
 
 const Register = () => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const isLoggedIn = useSelector((state) => state.user.isLoggedIn);
   const [profileImg, setProfileImg] = useState(null);
   const [coverImg, setCoverImg] = useState(null);
   const [error, setError] = useState(null);
   const [credentials, setCredentials] = useState({
     email: "",
     username: "",
+    firstName: "",
+    lastName: "",
     password: "",
     confirmPassword: "",
   });
@@ -45,8 +53,29 @@ const Register = () => {
         profileImg,
         coverImg,
       });
+
+      const formData = new FormData();
+      formData.append("email", credentials.email);
+      formData.append("username", credentials.username);
+      formData.append(
+        "fullName",
+        `${credentials.firstName} ${credentials.lastName}`
+      );
+      formData.append("password", credentials.password);
+      formData.append("avatar", profileImg);
+      if (coverImg) {
+        formData.append("coverImage", coverImg);
+      }
+
+      dispatch(registerUser(formData));
     }
   }
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      navigate("/");
+    }
+  }, [isLoggedIn, navigate]);
 
   return (
     <form
@@ -56,7 +85,7 @@ const Register = () => {
       <div className="absolute right-4 top-4 z-10">
         <ThemeToggle />
       </div>
-      <div className="flex md:mt-32 mx-auto my-8 w-full max-w-sm flex-col px-4">
+      <div className="flex md:mt-20 mx-auto my-8 w-full max-w-sm flex-col px-4">
         <div className="mx-auto inline-block w-16">
           <Logo />
         </div>
@@ -72,6 +101,25 @@ const Register = () => {
           onChange={handleChange}
           error={error?.email}
         />
+        <div className="flex gap-2">
+          <Input
+            label="First Name*"
+            type="text"
+            placeholder="Enter First Name"
+            name="firstName"
+            value={credentials.firstName}
+            onChange={handleChange}
+            error={error?.firstName}
+          />
+          <Input
+            label="Last Name"
+            type="text"
+            placeholder="Enter Last Name"
+            name="lastName"
+            value={credentials.lastName}
+            onChange={handleChange}
+          />
+        </div>
         <Input
           label="Username*"
           type="text"

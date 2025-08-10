@@ -14,6 +14,15 @@ const validateRegistrationForm = (profileImg, credentials) => {
     errors.profileImg = "A profile image is required.";
   }
 
+  // Validate firstName
+  if (!credentials.firstName.trim()) {
+    errors.firstName = "First name is required.";
+  } else if (credentials.firstName.length < 2) {
+    errors.firstName = "First name must be at least 2 characters.";
+  } else if (credentials.firstName.length > 50) {
+    errors.firstName = "First name must be less than 50 characters.";
+  }
+
   // Validate email
   if (!credentials.email.trim()) {
     errors.email = "Email is required.";
