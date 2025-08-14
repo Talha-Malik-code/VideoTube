@@ -24,19 +24,16 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Layout />}>
-          <></>
           {/* <Route element={<ProtectedRoute />}>
             <Route index element={<Home />} />
           </Route> */}
           <Route index element={<Home />} />
+          <Route path="video/:id" element={<VideoDetail />} />
         </Route>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/video/:id" element={<Layout />}>
-          <Route index element={<VideoDetail />} />
-        </Route>
       </Routes>
-      <ToastContainer />
+      <ToastContainer position="bottom-right" />
     </BrowserRouter>
   );
 }

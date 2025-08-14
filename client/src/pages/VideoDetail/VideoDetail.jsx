@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import VideoPlayer from "./components/VideoPlayer";
 import VideoHeaderMeta from "./components/VideoHeaderMeta";
@@ -9,6 +9,22 @@ import RecommendedList from "./components/RecommendedList";
 
 const VideoDetail = () => {
   const { id } = useParams();
+  const [isSubscribed, setIsSubscribed] = useState(false);
+
+  // Handle subscription toggle
+  const handleSubscriptionToggle = () => {
+    setIsSubscribed((prev) => !prev);
+    console.log(
+      isSubscribed ? "Unsubscribed from channel" : "Subscribed to channel"
+    );
+  };
+
+  // Reset subscription state when video changes
+  useEffect(() => {
+    setIsSubscribed(false);
+    console.log("Video changed, reset subscription state for video ID:", id);
+  }, [id]);
+
   // Static demo data from provided page (replace with real data later). id is accessible if needed.
   const video = {
     src: "https://res.cloudinary.com/dfw5nnic5/video/upload/v1695117968/Sample_1280x720_mp4_b4db0s.mp4",
@@ -40,7 +56,11 @@ const VideoDetail = () => {
             timeText={video.timeText}
           />
           <ActionsBar likeCount={3050} boostCount={20} />
-          <ChannelBar channel={video.channel} />
+          <ChannelBar
+            channel={video.channel}
+            isSubscribed={isSubscribed}
+            onSubscriptionToggle={handleSubscriptionToggle}
+          />
           <hr className="my-4 border-gray-200 dark:border-white" />
           <DescriptionCollapse description={video.description} />
         </div>

@@ -40,6 +40,16 @@ const Header = () => {
     setOpenMenu(false);
   }
 
+  // Debug function
+  const handleHamburgerClick = (e) => {
+    e.stopPropagation();
+    console.log("Hamburger clicked, current navOpen:", navOpen);
+    setNavOpen((v) => {
+      console.log("Setting navOpen to:", !v);
+      return !v;
+    });
+  };
+
   return (
     <header className="sticky inset-x-0 top-0 z-50 w-full border-b border-gray-200 bg-white px-4 dark:border-white dark:bg-[#121212]">
       <nav className="mx-auto flex max-w-7xl items-center py-2">
@@ -67,10 +77,7 @@ const Header = () => {
         {/* Mobile Menu Hamburger */}
         <button
           className="group ml-4 flex w-6 shrink-0 flex-wrap gap-y-1.5 sm:hidden"
-          onClick={(e) => {
-            e.stopPropagation();
-            setNavOpen((v) => !v);
-          }}
+          onClick={handleHamburgerClick}
           aria-label="Open menu"
         >
           <span className="block h-[2px] w-full bg-gray-800 group-hover:bg-[#5936D9] dark:bg-white dark:group-hover:bg-[#ae7aff]" />
@@ -89,8 +96,8 @@ const Header = () => {
 
         {/* Slide-in mobile menu & Desktop buttons container */}
         <div
-          className={`fixed inset-y-0 right-0 z-50 flex w-full max-w-xs translate-x-full flex-col border-l border-gray-200 bg-white duration-200 dark:border-l-white dark:bg-[#121212] sm:static sm:z-auto sm:ml-4 sm:w-auto sm:translate-x-0 sm:border-none ${
-            navOpen ? "translate-x-0" : ""
+          className={`fixed inset-y-0 right-0 z-50 flex w-full max-w-xs flex-col border-l border-gray-200 bg-white duration-200 dark:border-l-white dark:bg-[#121212] sm:static sm:z-auto sm:ml-4 sm:w-auto sm:translate-x-0 sm:border-none ${
+            navOpen ? "translate-x-0" : "translate-x-full"
           }`}
           onClick={(e) => e.stopPropagation()}
           role="dialog"
