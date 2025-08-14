@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import VideoTitle from "../videoComponents/VideoTitle";
 import VideoDetails from "../videoComponents/VideoDetails";
 import ChannelAvatar from "../videoComponents/ChannelAvatar";
@@ -12,9 +13,16 @@ const ListVideo = ({
   viewsText,
   timeText,
   description,
+  id,
 }) => {
+  const navigate = useNavigate();
+  const goToVideo = () => navigate(`/video/${id || encodeURIComponent(title)}`);
   return (
-    <div className="w-full max-w-3xl gap-x-4 md:flex text-gray-800 dark:text-white">
+    <div
+      className="w-full max-w-3xl gap-x-4 md:flex text-gray-800 dark:text-white"
+      role="button"
+      onClick={goToVideo}
+    >
       <div className="relative mb-2 w-full md:mb-0 md:w-5/12">
         <div className="w-full pt-[56%]">
           <div className="absolute inset-0">

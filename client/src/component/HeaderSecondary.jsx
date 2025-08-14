@@ -2,12 +2,18 @@ import React from "react";
 import Logo from "./Logo";
 import AButton from "./AButton";
 import CloseCircleIcon from "./iconComponents/CloseCircleIcon";
-import { useSelector } from "react-redux";
-import { selectUserData } from "../app/features/userSlice";
+import { useDispatch, useSelector } from "react-redux";
+import { logoutUser, selectUserData } from "../app/features/userSlice";
 import { Link } from "react-router-dom";
 
 const HeaderSecondary = () => {
   const user = useSelector(selectUserData);
+  const dispatch = useDispatch();
+  const [openMenu, setOpenMenu] = React.useState(false);
+  function handleLogout() {
+    dispatch(logoutUser());
+    setOpenMenu(false);
+  }
 
   return (
     <header className="sticky inset-x-0 top-0 z-50 w-full border-b bg-white px-4 text-gray-800 dark:border-white dark:bg-[#121212] dark:text-white">
@@ -62,8 +68,11 @@ const HeaderSecondary = () => {
 
           {/* Auth buttons */}
           {user ? (
-            <div className="mb-8 mt-auto px-4 md:mb-0 md:mt-0 md:px-0">
-              <button className="flex w-full gap-4 text-left md:items-center">
+            <div className="relative mb-8 mt-auto px-4 md:mb-0 md:mt-0 md:px-0">
+              <button
+                className="flex w-full gap-4 text-left md:items-center"
+                onClick={() => setOpenMenu((v) => !v)}
+              >
                 <img
                   src={user?.avatar}
                   alt={user?.fullName}
@@ -76,6 +85,16 @@ const HeaderSecondary = () => {
                   </p>
                 </div>
               </button>
+              {openMenu && (
+                <div className="absolute right-0 top-full z-50 mt-2 w-48 rounded-md border border-gray-200 bg-white p-2 text-gray-800 shadow dark:border-white/40 dark:bg-[#121212] dark:text-white">
+                  <button
+                    className="w-full px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-white/10"
+                    onClick={handleLogout}
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <div className="mb-8 mt-auto flex flex-wrap gap-4 px-4 md:mb-0 md:mt-0 md:items-center md:px-0">

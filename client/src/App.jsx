@@ -8,6 +8,7 @@ import Register from "./pages/Register/Register";
 import Login from "./pages/Login/Login";
 import ProtectedRoute from "./component/ProtectedRoute";
 import Home from "./pages/Home/Home";
+import VideoDetail from "./pages/VideoDetail/VideoDetail";
 import { useDispatch } from "react-redux";
 import { useEffect } from "react";
 import { checkAuthStatus } from "./app/features/userSlice";
@@ -31,6 +32,9 @@ function App() {
         </Route>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/video/:id" element={<Layout />}>
+          <Route index element={<VideoDetail />} />
+        </Route>
       </Routes>
       <ToastContainer />
     </BrowserRouter>

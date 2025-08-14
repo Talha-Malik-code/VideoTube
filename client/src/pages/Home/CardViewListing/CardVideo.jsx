@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import VideoTitle from "../videoComponents/VideoTitle";
 import VideoDetails from "../videoComponents/VideoDetails";
 import ChannelAvatar from "../videoComponents/ChannelAvatar";
@@ -11,9 +12,16 @@ const CardVideo = ({
   title,
   viewsText,
   timeText,
+  id,
 }) => {
+  const navigate = useNavigate();
+  const goToVideo = () => navigate(`/video/${id || encodeURIComponent(title)}`);
   return (
-    <div className="w-full text-gray-800 dark:text-white">
+    <div
+      className="w-full text-gray-800 dark:text-white"
+      role="button"
+      onClick={goToVideo}
+    >
       <div className="relative mb-2 w-full pt-[56%]">
         <div className="absolute inset-0">
           <img
