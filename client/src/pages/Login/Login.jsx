@@ -6,7 +6,7 @@ import Input from "../../component/authInputComponents/Input";
 import { validateLoginForm } from "../../../utils/validateLoginForm";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { loginUser } from "../../app/features/userSlice";
+import { loginUser, checkAuthStatus } from "../../app/features/userSlice";
 
 const Login = () => {
   const dispatch = useDispatch();
@@ -36,7 +36,7 @@ const Login = () => {
     }
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
 
     const validationErrors = validateLoginForm(credentials);
@@ -47,17 +47,22 @@ const Login = () => {
         email: credentials.identity,
         password: credentials.password,
       };
-      dispatch(loginUser(payload));
+
+      try {
+        await dispatch(loginUser(payload)).unwrap();
+        // Immediately fetch fresh user data with avatar
+        await dispatch(checkAuthStatus()).unwrap();
+        navigate("/");
+      } catch (error) {
+        console.error("Login failed:", error);
+      }
     }
   }
 
   useEffect(() => {
     console.log(isLoggedIn);
-
-    if (isLoggedIn) {
-      navigate("/");
-    }
-  }, [isLoggedIn, navigate]);
+    // Don't auto-navigate here since we handle it in handleSubmit
+  }, [isLoggedIn]);
 
   return (
     <form

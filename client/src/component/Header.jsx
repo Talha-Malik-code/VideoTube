@@ -16,15 +16,25 @@ const Header = () => {
   const userStatus = useSelector((state) => state.user.status);
   const dispatch = useDispatch();
   const [openMenu, setOpenMenu] = React.useState(false);
+  const [navOpen, setNavOpen] = React.useState(false);
+
   React.useEffect(() => {
     function onDocClick() {
       setOpenMenu(false);
+      setNavOpen(false);
     }
-    if (openMenu) {
+    if (openMenu || navOpen) {
       document.addEventListener("click", onDocClick);
     }
     return () => document.removeEventListener("click", onDocClick);
-  }, [openMenu]);
+  }, [openMenu, navOpen]);
+
+  function getAvatarSrc(u) {
+    return (
+      u?.avatar?.url || u?.avatar || (u?.profile && u.profile.avatar) || ""
+    );
+  }
+
   function handleLogout() {
     dispatch(logoutUser());
     setOpenMenu(false);
@@ -55,20 +65,47 @@ const Header = () => {
         </button>
 
         {/* Mobile Menu Hamburger */}
-        <button className="group peer ml-4 flex w-6 shrink-0 flex-wrap gap-y-1.5 sm:hidden">
+        <button
+          className="group ml-4 flex w-6 shrink-0 flex-wrap gap-y-1.5 sm:hidden"
+          onClick={(e) => {
+            e.stopPropagation();
+            setNavOpen((v) => !v);
+          }}
+          aria-label="Open menu"
+        >
           <span className="block h-[2px] w-full bg-gray-800 group-hover:bg-[#5936D9] dark:bg-white dark:group-hover:bg-[#ae7aff]" />
           <span className="block h-[2px] w-2/3 bg-gray-800 group-hover:bg-[#5936D9] dark:bg-white dark:group-hover:bg-[#ae7aff]" />
           <span className="block h-[2px] w-full bg-gray-800 group-hover:bg-[#5936D9] dark:bg-white dark:group-hover:bg-[#ae7aff]" />
         </button>
 
+        {/* Overlay for outside click when navOpen */}
+        {navOpen && (
+          <button
+            aria-hidden
+            className="fixed inset-0 z-40 block bg-black/20 sm:hidden"
+            onClick={() => setNavOpen(false)}
+          />
+        )}
+
         {/* Slide-in mobile menu & Desktop buttons container */}
-        <div className="fixed inset-y-0 right-0 flex w-full max-w-xs  translate-x-full flex-col border-l border-gray-200 bg-white duration-200 hover:translate-x-0 peer-focus:translate-x-0 dark:border-l-white dark:bg-[#121212] sm:static sm:ml-4 sm:w-auto sm:translate-x-0 sm:border-none">
+        <div
+          className={`fixed inset-y-0 right-0 z-50 flex w-full max-w-xs translate-x-full flex-col border-l border-gray-200 bg-white duration-200 dark:border-l-white dark:bg-[#121212] sm:static sm:z-auto sm:ml-4 sm:w-auto sm:translate-x-0 sm:border-none ${
+            navOpen ? "translate-x-0" : ""
+          }`}
+          onClick={(e) => e.stopPropagation()}
+          role="dialog"
+          aria-modal={navOpen ? true : undefined}
+        >
           {/* Mobile header (logo + close) */}
           <div className="relative flex w-full items-center justify-between border-b border-gray-200 px-4 py-2 dark:border-b-white sm:hidden">
             <span className="inline-block w-12">
               <Logo />
             </span>
-            <button className="inline-block w-8 text-gray-800 dark:text-white">
+            <button
+              className="inline-block w-8 text-gray-800 dark:text-white"
+              onClick={() => setNavOpen(false)}
+              aria-label="Close menu"
+            >
               <CloseCircleIcon className="h-6 w-6" />
             </button>
           </div>
@@ -112,7 +149,7 @@ const Header = () => {
             </li>
           </ul>
 
-          {/* Auth buttons */}
+          {/* Auth buttons / Avatar */}
           {user ? (
             <div className="relative mb-8 mt-auto px-4 sm:mb-0 sm:mt-0 sm:px-0">
               <button
@@ -121,25 +158,33 @@ const Header = () => {
                   e.stopPropagation();
                   setOpenMenu((v) => !v);
                 }}
+                aria-haspopup="menu"
+                aria-expanded={openMenu}
               >
                 {userStatus === "loading" ? (
                   <span className="h-16 w-16 sm:h-12 sm:w-12 shrink-0 rounded-full border-2 border-gray-300 border-t-[#5936D9] dark:border-white/30 dark:border-t-[#ae7aff] animate-spin inline-block"></span>
-                ) : (
+                ) : getAvatarSrc(user) ? (
                   <img
-                    src={user?.avatar}
+                    key={getAvatarSrc(user)}
+                    src={getAvatarSrc(user)}
                     alt={user?.fullName}
                     className="h-16 w-16 shrink-0 rounded-full sm:h-12 sm:w-12"
                   />
+                ) : (
+                  <span className="h-16 w-16 sm:h-12 sm:w-12 shrink-0 rounded-full bg-gray-200 dark:bg-white/20" />
                 )}
                 <div className="w-full pt-2 sm:hidden">
-                  <h6 className="font-semibold">{user.fullName}</h6>
-                  <p className="text-sm text-gray-300">@{user.username}</p>
+                  <h6 className="font-semibold">{user?.fullName}</h6>
+                  <p className="text-sm text-gray-500 dark:text-gray-300">
+                    @{user?.username}
+                  </p>
                 </div>
               </button>
               {openMenu && (
                 <div
-                  className="absolute right-0 top-full z-50 mt-2 w-48 rounded-md border border-gray-200 bg-white p-2 text-gray-800 shadow dark:border-white/40 dark:bg-[#121212] dark:text-white"
+                  className="absolute right-0 z-50 w-48 rounded-md border border-gray-200 bg-white p-2 text-gray-800 shadow dark:border-white/40 dark:bg-[#121212] dark:text-white bottom-full mb-2 sm:top-full sm:mt-2 sm:bottom-auto"
                   onClick={(e) => e.stopPropagation()}
+                  role="menu"
                 >
                   <button
                     className="w-full px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-white/10"
@@ -153,7 +198,7 @@ const Header = () => {
           ) : (
             <div className="mb-8 mt-auto flex flex-col sm:flex-row sm:min-w-44 flex-wrap gap-4 px-4 sm:mb-0 sm:mt-0 sm:items-center sm:px-0">
               <Link to="/login">
-                <button className="w-full bg-gray-200 px-3 py-2 text-gray-800 hover:bg-[#4f4e4e] hover:text-white sm:w-auto sm:bg-transparent sm:text-gray-800 dark:bg-[#383737] dark:text-white dark:hover:bg-[#4f4e4e] sm:dark:bg-transparent  sm:dark:text-white">
+                <button className="w-full bg-gray-200 px-3 py-2 text-gray-800 hover:bg-[#4f4e4e] hover:text-white sm:w-auto sm:bg-transparent sm:text-gray-800 dark:bg-[#383737] dark:text-white dark:hover:bg-[#4f4e4e] sm:dark:bg-transparent sm:dark:text-white">
                   Log in
                 </button>
               </Link>
