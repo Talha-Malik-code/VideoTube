@@ -8,8 +8,18 @@ import { Link } from "react-router-dom";
 
 const HeaderSecondary = () => {
   const user = useSelector(selectUserData);
+  const userStatus = useSelector((state) => state.user.status);
   const dispatch = useDispatch();
   const [openMenu, setOpenMenu] = React.useState(false);
+  React.useEffect(() => {
+    function onDocClick() {
+      setOpenMenu(false);
+    }
+    if (openMenu) {
+      document.addEventListener("click", onDocClick);
+    }
+    return () => document.removeEventListener("click", onDocClick);
+  }, [openMenu]);
   function handleLogout() {
     dispatch(logoutUser());
     setOpenMenu(false);
@@ -71,13 +81,20 @@ const HeaderSecondary = () => {
             <div className="relative mb-8 mt-auto px-4 md:mb-0 md:mt-0 md:px-0">
               <button
                 className="flex w-full gap-4 text-left md:items-center"
-                onClick={() => setOpenMenu((v) => !v)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setOpenMenu((v) => !v);
+                }}
               >
-                <img
-                  src={user?.avatar}
-                  alt={user?.fullName}
-                  className="h-16 w-16 shrink-0 rounded-full md:h-12 md:w-12"
-                />
+                {userStatus === "loading" ? (
+                  <span className="h-16 w-16 md:h-12 md:w-12 shrink-0 rounded-full border-2 border-gray-300 border-t-[#5936D9] dark:border-white/30 dark:border-t-[#ae7aff] animate-spin inline-block"></span>
+                ) : (
+                  <img
+                    src={user?.avatar}
+                    alt={user?.fullName}
+                    className="h-16 w-16 shrink-0 rounded-full md:h-12 md:w-12"
+                  />
+                )}
                 <div className="w-full pt-2 md:hidden">
                   <h6 className="font-semibold">{user.fullName}</h6>
                   <p className="text-sm text-gray-500 dark:text-gray-300">
@@ -86,7 +103,10 @@ const HeaderSecondary = () => {
                 </div>
               </button>
               {openMenu && (
-                <div className="absolute right-0 top-full z-50 mt-2 w-48 rounded-md border border-gray-200 bg-white p-2 text-gray-800 shadow dark:border-white/40 dark:bg-[#121212] dark:text-white">
+                <div
+                  className="absolute right-0 top-full z-50 mt-2 w-48 rounded-md border border-gray-200 bg-white p-2 text-gray-800 shadow dark:border-white/40 dark:bg-[#121212] dark:text-white"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <button
                     className="w-full px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-white/10"
                     onClick={handleLogout}

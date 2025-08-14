@@ -16,6 +16,9 @@ const Sidebar = () => {
   const lgWidthClass = isVideoRoute
     ? "lg:max-w-[70px] lg:hover:max-w-[250px]"
     : "lg:max-w-[250px]";
+  const labelClass = isVideoRoute
+    ? "block sm:hidden sm:group-hover:inline"
+    : "block sm:hidden sm:group-hover:inline lg:inline";
   return (
     <aside
       className={`group fixed inset-x-0 bottom-0 z-40 w-full shrink-0 border-t border-gray-300 bg-white text-gray-900 px-2 py-2 dark:border-white dark:bg-[#121212] dark:text-white sm:absolute sm:inset-y-0 sm:max-w-[70px] sm:border-r sm:border-t-0 sm:py-6 sm:hover:max-w-[250px] lg:sticky ${lgWidthClass}`}
@@ -26,9 +29,7 @@ const Sidebar = () => {
             <span className="inline-block w-5 shrink-0 sm:group-hover:mr-4 lg:mr-4">
               <HomeIcon />
             </span>
-            <span className="block sm:hidden sm:group-hover:inline lg:inline">
-              Home
-            </span>
+            <span className={labelClass}>Home</span>
           </button>
         </li>
         <li className="hidden sm:block">
@@ -36,9 +37,7 @@ const Sidebar = () => {
             <span className="inline-block w-5 shrink-0 sm:group-hover:mr-4 lg:mr-4">
               <ThumbsUpIcon />
             </span>
-            <span className="block sm:hidden sm:group-hover:inline lg:inline">
-              Liked Videos
-            </span>
+            <span className={labelClass}>Liked Videos</span>
           </button>
         </li>
         <li className="">
@@ -46,9 +45,7 @@ const Sidebar = () => {
             <span className="inline-block w-5 shrink-0 sm:group-hover:mr-4 lg:mr-4">
               <HistoryIcon />
             </span>
-            <span className="block sm:hidden sm:group-hover:inline lg:inline">
-              History
-            </span>
+            <span className={labelClass}>History</span>
           </button>
         </li>
         <li className="hidden sm:block">
@@ -56,9 +53,7 @@ const Sidebar = () => {
             <span className="inline-block w-5 shrink-0 sm:group-hover:mr-4 lg:mr-4">
               <PlayRectangleIcon />
             </span>
-            <span className="block sm:hidden sm:group-hover:inline lg:inline">
-              My Content
-            </span>
+            <span className={labelClass}>My Content</span>
           </button>
         </li>
         <li className="">
@@ -66,9 +61,7 @@ const Sidebar = () => {
             <span className="inline-block w-5 shrink-0 sm:group-hover:mr-4 lg:mr-4">
               <CollectionsIcon />
             </span>
-            <span className="block sm:hidden sm:group-hover:inline lg:inline">
-              Collections
-            </span>
+            <span className={labelClass}>Collections</span>
           </button>
         </li>
         <li className="">
@@ -76,9 +69,7 @@ const Sidebar = () => {
             <span className="inline-block w-5 shrink-0 sm:group-hover:mr-4 lg:mr-4">
               <SubscribersIcon />
             </span>
-            <span className="block sm:hidden sm:group-hover:inline lg:inline">
-              Subscribers
-            </span>
+            <span className={labelClass}>Subscribers</span>
           </button>
         </li>
         <li className="hidden sm:block mt-auto">
@@ -91,9 +82,7 @@ const Sidebar = () => {
             <span className="inline-block w-5 shrink-0 sm:group-hover:mr-4 lg:mr-4">
               <SupportIcon />
             </span>
-            <span className="block sm:hidden sm:group-hover:inline lg:inline">
-              Support
-            </span>
+            <span className={labelClass}>Support</span>
           </button>
         </li>
         <li className="hidden sm:block">
@@ -101,9 +90,7 @@ const Sidebar = () => {
             <span className="inline-block w-5 shrink-0 sm:group-hover:mr-4 lg:mr-4">
               <GearIcon />
             </span>
-            <span className="block sm:hidden sm:group-hover:inline lg:inline">
-              Settings
-            </span>
+            <span className={labelClass}>Settings</span>
           </button>
         </li>
       </ul>

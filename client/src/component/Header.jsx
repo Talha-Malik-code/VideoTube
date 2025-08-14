@@ -13,8 +13,18 @@ import { Link } from "react-router-dom";
 
 const Header = () => {
   const user = useSelector(selectUserData);
+  const userStatus = useSelector((state) => state.user.status);
   const dispatch = useDispatch();
   const [openMenu, setOpenMenu] = React.useState(false);
+  React.useEffect(() => {
+    function onDocClick() {
+      setOpenMenu(false);
+    }
+    if (openMenu) {
+      document.addEventListener("click", onDocClick);
+    }
+    return () => document.removeEventListener("click", onDocClick);
+  }, [openMenu]);
   function handleLogout() {
     dispatch(logoutUser());
     setOpenMenu(false);
@@ -52,7 +62,7 @@ const Header = () => {
         </button>
 
         {/* Slide-in mobile menu & Desktop buttons container */}
-        <div className="fixed inset-y-0 right-0 flex w-full max-w-xs translate-x-full flex-col border-l border-gray-200 bg-white duration-200 hover:translate-x-0 peer-focus:translate-x-0 dark:border-l-white dark:bg-[#121212] sm:static sm:ml-4 sm:w-auto sm:translate-x-0 sm:border-none">
+        <div className="fixed inset-y-0 right-0 flex w-full max-w-xs  translate-x-full flex-col border-l border-gray-200 bg-white duration-200 hover:translate-x-0 peer-focus:translate-x-0 dark:border-l-white dark:bg-[#121212] sm:static sm:ml-4 sm:w-auto sm:translate-x-0 sm:border-none">
           {/* Mobile header (logo + close) */}
           <div className="relative flex w-full items-center justify-between border-b border-gray-200 px-4 py-2 dark:border-b-white sm:hidden">
             <span className="inline-block w-12">
@@ -107,20 +117,30 @@ const Header = () => {
             <div className="relative mb-8 mt-auto px-4 sm:mb-0 sm:mt-0 sm:px-0">
               <button
                 className="flex w-full gap-4 text-left sm:items-center"
-                onClick={() => setOpenMenu((v) => !v)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setOpenMenu((v) => !v);
+                }}
               >
-                <img
-                  src={user?.avatar}
-                  alt={user?.fullName}
-                  className="h-16 w-16 shrink-0 rounded-full sm:h-12 sm:w-12"
-                />
+                {userStatus === "loading" ? (
+                  <span className="h-16 w-16 sm:h-12 sm:w-12 shrink-0 rounded-full border-2 border-gray-300 border-t-[#5936D9] dark:border-white/30 dark:border-t-[#ae7aff] animate-spin inline-block"></span>
+                ) : (
+                  <img
+                    src={user?.avatar}
+                    alt={user?.fullName}
+                    className="h-16 w-16 shrink-0 rounded-full sm:h-12 sm:w-12"
+                  />
+                )}
                 <div className="w-full pt-2 sm:hidden">
                   <h6 className="font-semibold">{user.fullName}</h6>
                   <p className="text-sm text-gray-300">@{user.username}</p>
                 </div>
               </button>
               {openMenu && (
-                <div className="absolute right-0 top-full z-50 mt-2 w-48 rounded-md border border-gray-200 bg-white p-2 text-gray-800 shadow dark:border-white/40 dark:bg-[#121212] dark:text-white">
+                <div
+                  className="absolute right-0 top-full z-50 mt-2 w-48 rounded-md border border-gray-200 bg-white p-2 text-gray-800 shadow dark:border-white/40 dark:bg-[#121212] dark:text-white"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <button
                     className="w-full px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-white/10"
                     onClick={handleLogout}
