@@ -12,12 +12,12 @@ import {
 } from "../controllers/video.controller.js";
 
 const router = Router();
-router.use(verifyJWT);
 
 router
   .route("/")
   .get(getAllVideos)
   .post(
+    verifyJWT,
     upload.fields([
       {
         name: "video",
@@ -34,13 +34,13 @@ router
 router
   .route("/:videoId")
   .get(getVideoById)
-  .patch(updateVideoDetails)
-  .delete(deleteVideo);
+  .patch(verifyJWT, updateVideoDetails)
+  .delete(verifyJWT, deleteVideo);
 
 router
   .route("/t/:videoId")
-  .patch(upload.single("thumbnail"), updateVideoThumbnail);
+  .patch(verifyJWT, upload.single("thumbnail"), updateVideoThumbnail);
 
-router.route("/toggle/publish/:videoId").patch(togglePublishStatus);
+router.route("/toggle/publish/:videoId").patch(verifyJWT, togglePublishStatus);
 
 export default router;

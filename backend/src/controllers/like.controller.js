@@ -5,197 +5,199 @@ import { Like } from "../models/like.model.js";
 import mongoose from "mongoose";
 
 const toggleVideoLike = asyncHandler(async (req, res) => {
-    const { videoId } = req.params;
+  const { videoId } = req.params;
 
-    if (!videoId) {
-        throw new ApiError(400, "Video id is required");
-    }
+  if (!videoId) {
+    throw new ApiError(400, "Video id is required");
+  }
 
-    const likeExists = await Like.findOneAndDelete({
-        video: videoId,
-        likedBy: req.user?._id
+  const likeExists = await Like.findOneAndDelete({
+    video: videoId,
+    likedBy: req.user?._id,
+  });
+
+  let newLike;
+
+  if (!likeExists) {
+    newLike = await Like.create({
+      video: videoId,
+      likedBy: req.user?._id,
     });
+  }
 
-    let newLike;
+  const likeCount = await Like.countDocuments({ video: videoId });
 
-    if (!likeExists) {
-        newLike = await Like.create({
-            video: videoId,
-            likedBy: req.user?._id
-        })
-    }
-
-    return res
-    .status(200)
-    .json(new ApiResponse(
-        200,
-        likeExists ? {} : newLike,
-        `Video ${likeExists ? "Unliked" : "Liked"} successfully`
-    ));
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        likedBy: likeExists ? {} : newLike,
+        isLiked: !likeExists,
+        likeCount: likeCount,
+      },
+      `Video ${likeExists ? "Unliked" : "Liked"} successfully`
+    )
+  );
 });
 
 const toggleCommentLike = asyncHandler(async (req, res) => {
-    const { commentId } = req.params;
+  const { commentId } = req.params;
 
-    if (!commentId) {
-        throw new ApiError(400, "Comment id is required");
-    }
+  if (!commentId) {
+    throw new ApiError(400, "Comment id is required");
+  }
 
-    const likeExists = await Like.findOneAndDelete({
-        comment: commentId,
-        likedBy: req.user?._id
+  const likeExists = await Like.findOneAndDelete({
+    comment: commentId,
+    likedBy: req.user?._id,
+  });
+
+  let newLike;
+
+  if (!likeExists) {
+    newLike = await Like.create({
+      comment: commentId,
+      likedBy: req.user?._id,
     });
+  }
 
-    let newLike;
-
-    if (!likeExists) {
-        newLike = await Like.create({
-            comment: commentId,
-            likedBy: req.user?._id
-        })
-    }
-
-    return res
+  return res
     .status(200)
-    .json(new ApiResponse(
+    .json(
+      new ApiResponse(
         200,
         likeExists ? {} : newLike,
         `Comment ${likeExists ? "Unliked" : "Liked"} successfully`
-    ));
+      )
+    );
 });
 
 const toggleTweetLike = asyncHandler(async (req, res) => {
-    const { tweetId } = req.params;
+  const { tweetId } = req.params;
 
-    if (!tweetId) {
-        throw new ApiError(400, "Tweet id is required");
-    }
+  if (!tweetId) {
+    throw new ApiError(400, "Tweet id is required");
+  }
 
-    const likeExists = await Like.findOneAndDelete({
-        tweet: tweetId,
-        likedBy: req.user?._id
+  const likeExists = await Like.findOneAndDelete({
+    tweet: tweetId,
+    likedBy: req.user?._id,
+  });
+
+  let newLike;
+
+  if (!likeExists) {
+    newLike = await Like.create({
+      tweet: tweetId,
+      likedBy: req.user?._id,
     });
+  }
 
-    let newLike;
-
-    if (!likeExists) {
-        newLike = await Like.create({
-            tweet: tweetId,
-            likedBy: req.user?._id
-        })
-    }
-
-    return res
+  return res
     .status(200)
-    .json(new ApiResponse(
+    .json(
+      new ApiResponse(
         200,
         likeExists ? {} : newLike,
         `Tweet ${likeExists ? "Unliked" : "Liked"} successfully`
-    ));
+      )
+    );
 });
 
 const getLikedVideos = asyncHandler(async (req, res) => {
-    const likedVideos = await Like.aggregate([
-        {
-            $match: {
-                likedBy: new mongoose.Types.ObjectId(req.user?._id)
-            }
-        },
-        {
+  const likedVideos = await Like.aggregate([
+    {
+      $match: {
+        likedBy: new mongoose.Types.ObjectId(req.user?._id),
+      },
+    },
+    {
+      $lookup: {
+        from: "videos",
+        localField: "video",
+        foreignField: "_id",
+        as: "likedVideos",
+        pipeline: [
+          {
             $lookup: {
-                from: "videos",
-                localField: "video",
-                foreignField: "_id",
-                as: "likedVideos",
-                pipeline: [
-                    {
-                        $lookup: {
-                            from: "users",
-                            localField: "owner",
-                            foreignField: "_id",
-                            as: "owner",
-                            pipeline: [
-                                {
-                                    $project: {
-                                        fullName: 1,
-                                        username: 1,
-                                        avatar: 1
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    {
-                        $addFields: {
-                            owner: {
-                                $first: "$owner"
-                            }
-                        }
-                    }
-                ]
-            }
-        },
-        {
-            $unwind: "$likedVideos"
-        },
-        {
-            $project: {
-                _id: 0,
-                likedVideos: 1
-            }
-        },
-        {
-            $replaceRoot: { newRoot: "$likedVideos" }
-        }
-    ]);
+              from: "users",
+              localField: "owner",
+              foreignField: "_id",
+              as: "owner",
+              pipeline: [
+                {
+                  $project: {
+                    fullName: 1,
+                    username: 1,
+                    avatar: 1,
+                  },
+                },
+              ],
+            },
+          },
+          {
+            $addFields: {
+              owner: {
+                $first: "$owner",
+              },
+            },
+          },
+        ],
+      },
+    },
+    {
+      $unwind: "$likedVideos",
+    },
+    {
+      $project: {
+        _id: 0,
+        likedVideos: 1,
+      },
+    },
+    {
+      $replaceRoot: { newRoot: "$likedVideos" },
+    },
+  ]);
 
-    // const likedVideos = await Like.aggregate([
-    //     {
-    //         $match: {
-    //             likedBy: new mongoose.Types.ObjectId(req.user?._id)
-    //         }
-    //     },
-    //     {
-    //         $lookup: {
-    //             from: "videos",
-    //             localField: "video",
-    //             foreignField: "_id",
-    //             as: "video"
-    //         }
-    //     },
-    //     {
-    //         $unwind: "$video"
-    //     },
-    //     {
-    //         $lookup: {
-    //             from: "users",
-    //             localField: "video.owner",
-    //             foreignField: "_id",
-    //             as: "video.owner",
-    //             pipeline: [{ $project: { fullName: 1, username: 1, avatar: 1 } }]
-    //         }
-    //     },
-    //     {
-    //         $unwind: "$video.owner"
-    //     },
-    //     {
-    //         $replaceRoot: { newRoot: "$video" }
-    //     }
-    // ]);
+  // const likedVideos = await Like.aggregate([
+  //     {
+  //         $match: {
+  //             likedBy: new mongoose.Types.ObjectId(req.user?._id)
+  //         }
+  //     },
+  //     {
+  //         $lookup: {
+  //             from: "videos",
+  //             localField: "video",
+  //             foreignField: "_id",
+  //             as: "video"
+  //         }
+  //     },
+  //     {
+  //         $unwind: "$video"
+  //     },
+  //     {
+  //         $lookup: {
+  //             from: "users",
+  //             localField: "video.owner",
+  //             foreignField: "_id",
+  //             as: "video.owner",
+  //             pipeline: [{ $project: { fullName: 1, username: 1, avatar: 1 } }]
+  //         }
+  //     },
+  //     {
+  //         $unwind: "$video.owner"
+  //     },
+  //     {
+  //         $replaceRoot: { newRoot: "$video" }
+  //     }
+  // ]);
 
-    return res
+  return res
     .status(200)
-    .json(new ApiResponse(
-        200,
-        likedVideos,
-        "Fetched liked videos successfully"
-    ))
+    .json(
+      new ApiResponse(200, likedVideos, "Fetched liked videos successfully")
+    );
 });
 
-
-export {
-    toggleVideoLike,
-    toggleCommentLike,
-    toggleTweetLike,
-    getLikedVideos
-}
+export { toggleVideoLike, toggleCommentLike, toggleTweetLike, getLikedVideos };

@@ -1,6 +1,9 @@
 import React from "react";
 
-const VideoHeaderMeta = ({ title, viewsText, timeText }) => {
+const VideoHeaderMeta = ({ title, views, duration }) => {
+  const viewsText = views > 1000 ? `${(views / 1000).toFixed(1)}K` : views;
+  const timeText = duration;
+
   return (
     <div className="flex flex-wrap gap-y-2">
       <div className="w-full md:w-1/2 lg:w-full xl:w-1/2">

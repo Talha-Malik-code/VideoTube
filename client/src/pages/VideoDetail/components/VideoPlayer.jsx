@@ -1,6 +1,8 @@
 import React from "react";
 
 const VideoPlayer = ({ src }) => {
+  console.log("src: ", src);
+
   return (
     <div className="relative mb-4 w-full pt-[56%]">
       <div className="absolute inset-0">

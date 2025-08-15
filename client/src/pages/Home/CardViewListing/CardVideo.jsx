@@ -5,17 +5,18 @@ import VideoDetails from "../videoComponents/VideoDetails";
 import ChannelAvatar from "../videoComponents/ChannelAvatar";
 
 const CardVideo = ({
-  thumbnailUrl,
+  thumbnail,
   duration,
-  avatarUrl,
-  channelName,
+  owner,
   title,
-  viewsText,
-  timeText,
-  id,
+  createdAt,
+  views,
+  _id,
 }) => {
   const navigate = useNavigate();
-  const goToVideo = () => navigate(`/video/${id || encodeURIComponent(title)}`);
+  const goToVideo = () =>
+    navigate(`/video/${_id || encodeURIComponent(title)}`);
+
   return (
     <div
       className="w-full text-gray-800 dark:text-white"
@@ -25,7 +26,7 @@ const CardVideo = ({
       <div className="relative mb-2 w-full pt-[56%]">
         <div className="absolute inset-0">
           <img
-            src={thumbnailUrl}
+            src={thumbnail}
             alt={title}
             className="h-full w-full object-cover"
           />
@@ -37,13 +38,13 @@ const CardVideo = ({
         ) : null}
       </div>
       <div className="flex gap-x-2">
-        <ChannelAvatar src={avatarUrl} alt={channelName} size={40} />
+        <ChannelAvatar src={owner.avatar} alt={owner.fullName} size={40} />
         <div className="w-full">
           <VideoTitle title={title} className="mb-1" />
-          <VideoDetails viewsText={viewsText} timeText={timeText} />
           <p className="text-sm text-gray-600 dark:text-gray-200">
-            {channelName}
+            {owner.fullName}
           </p>
+          <VideoDetails createdAt={createdAt} views={views} />
         </div>
       </div>
     </div>

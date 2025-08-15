@@ -12,18 +12,21 @@ import mongoose from "mongoose";
 
 function formatSeconds(totalSec) {
   const sec = Number(totalSec);
-  if (!Number.isFinite(sec) || sec < 0) return "0s";
+  if (!Number.isFinite(sec) || sec < 0) {
+    return "0:00";
+  }
 
   const h = Math.floor(sec / 3600);
   const m = Math.floor((sec % 3600) / 60);
   const s = Math.round(sec % 60);
 
-  const parts = [];
-  if (h) parts.push(`${h}h`);
-  if (m) parts.push(`${m}m`);
-  if (s || !parts.length) parts.push(`${s}s`);
+  const padZero = (num) => String(num).padStart(2, "0");
 
-  return parts.join(" ");
+  if (h > 0) {
+    return `${h}:${padZero(m)}:${padZero(s)}`;
+  } else {
+    return `${m}:${padZero(s)}`;
+  }
 }
 
 const getAllVideos = asyncHandler(async (req, res) => {
@@ -174,28 +177,6 @@ const publishAVideo = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, video, "Video published successfully"));
 });
 
-// const getVideoById = asyncHandler(async (req, res) => {
-//     const { videoId } = req.params;
-
-//     if (!videoId) {
-//         throw new ApiError(400, "Video id is required");
-//     }
-
-//     const video = await Video.findById(videoId);
-
-//     if (!video) {
-//         throw new ApiError(401, "Invalid video id");
-//     }
-
-//     return res
-//     .status(200)
-//     .json(new ApiResponse(
-//         200,
-//         video,
-//         "Video fetched successfully"
-//     ));
-// })
-
 const getVideoById = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
 
@@ -220,7 +201,7 @@ const getVideoById = asyncHandler(async (req, res) => {
             $lookup: {
               from: "subscriptions",
               localField: "_id",
-              foreignField: "subscriber",
+              foreignField: "channel",
               as: "subscribers",
             },
           },
@@ -289,7 +270,7 @@ const getVideoById = asyncHandler(async (req, res) => {
                 {
                   $addFields: {
                     totalLikes: {
-                      $size: "$likes",
+                      $size: "$likedBy",
                     },
                     isLiked: {
                       $cond: {
@@ -322,51 +303,18 @@ const getVideoById = asyncHandler(async (req, res) => {
         from: "likes",
         localField: "_id",
         foreignField: "video",
-        as: "likes",
-        pipeline: [
-          {
-            $lookup: {
-              from: "users",
-              localField: "likedBy",
-              foreignField: "_id",
-              as: "likedBy",
-              pipeline: [
-                {
-                  $project: {
-                    username: 1,
-                    fullName: 1,
-                    avatar: 1,
-                  },
-                },
-              ],
-            },
-          },
-          {
-            $addFields: {
-              totalLikes: {
-                $size: "$likes",
-              },
-              isLiked: {
-                $cond: {
-                  if: {
-                    $in: [
-                      new mongoose.Types.ObjectId(req.user?._id),
-                      "$likedBy._id",
-                    ],
-                  },
-                  then: true,
-                  else: false,
-                },
-              },
-            },
-          },
-          {
-            $project: {
-              totalLikes: 1,
-              isLiked: 1,
-            },
-          },
-        ],
+        as: "videoLikes",
+      },
+    },
+    {
+      $addFields: {
+        totalLikes: { $size: "$videoLikes" },
+        isLiked: {
+          $in: [
+            new mongoose.Types.ObjectId(req.user?._id),
+            "$videoLikes.likedBy",
+          ],
+        },
       },
     },
     {
@@ -379,12 +327,12 @@ const getVideoById = asyncHandler(async (req, res) => {
   ]);
 
   if (!video) {
-    throw new ApiError(401, "Invalid video id");
+    throw new ApiError(400, "Invalid video id");
   }
 
   return res
     .status(200)
-    .json(new ApiResponse(200, video, "Video fetched successfully"));
+    .json(new ApiResponse(200, video[0], "Video fetched successfully"));
 });
 
 const updateVideoDetails = asyncHandler(async (req, res) => {
@@ -392,7 +340,7 @@ const updateVideoDetails = asyncHandler(async (req, res) => {
   const { title, description } = req.body;
 
   if (!videoId) {
-    throw new ApiError(400, "Video id is required");
+    throw new ApiError(400, "All feilds are required");
   }
 
   if (!title.trim() || !description.trim()) {
@@ -465,7 +413,7 @@ const updateVideoThumbnail = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, video, "Video thumbnail changed successfully"));
+    .json(new ApiResponse(200, video, "Video details updated successfully"));
 });
 
 const deleteVideo = asyncHandler(async (req, res) => {

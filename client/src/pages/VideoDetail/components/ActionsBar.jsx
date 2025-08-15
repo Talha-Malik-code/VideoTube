@@ -3,28 +3,41 @@ import LikeIcon from "../../../component/iconComponents/LikeIcon";
 import BoostIcon from "../../../component/iconComponents/BoostIcon";
 import SaveIcon from "../../../component/iconComponents/SaveIcon";
 
-const ActionsBar = ({ likeCount, boostCount }) => {
+const ActionsBar = ({
+  likeCount,
+  boostCount,
+  isLiked,
+  isLiking,
+  onLikeToggle,
+}) => {
+  // Debug: Log the values to see what's happening
+  console.log("ActionsBar props:", { likeCount, isLiked, isLiking });
+
   return (
     <div className="mt-4 w-full">
       <div className="flex items-center justify-between gap-x-4 md:justify-end lg:justify-between xl:justify-end">
         <div className="flex overflow-hidden rounded-lg border border-gray-300 dark:border-gray-700">
           <button
-            className="group/btn flex items-center gap-x-2 border-r border-gray-300 px-4 py-1.5 after:content-[attr(data-like)] hover:bg-gray-100 focus:after:content-[attr(data-like-alt)] dark:border-gray-700 dark:hover:bg-white/10"
-            data-like={likeCount}
-            data-like-alt={likeCount + 1}
+            onClick={onLikeToggle}
+            disabled={isLiking}
+            className={`flex items-center gap-x-2 border-r border-gray-300 px-4 py-1.5 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-white/10 transition-all ${
+              isLiked ? "bg-blue-50 dark:bg-blue-900/20" : ""
+            } ${isLiking ? "opacity-50 cursor-not-allowed" : ""}`}
           >
-            <span className="inline-block w-5 group-focus/btn:text-[#5936D9] dark:group-focus/btn:text-[#ae7aff]">
-              <LikeIcon />
+            <span
+              className={`inline-block w-5 ${
+                isLiked ? "text-[#5936D9] dark:text-[#ae7aff]" : ""
+              }`}
+            >
+              <LikeIcon filled={isLiked} />
             </span>
+            <span className="text-sm font-medium">{likeCount}</span>
           </button>
-          <button
-            className="group/btn flex items-center gap-x-2 px-4 py-1.5 after:content-[attr(data-like)] hover:bg-gray-100 focus:after:content-[attr(data-like-alt)] dark:hover:bg-white/10"
-            data-like={boostCount}
-            data-like-alt={boostCount + 1}
-          >
-            <span className="inline-block w-5 group-focus/btn:text-[#5936D9] dark:group-focus/btn:text-[#ae7aff]">
+          <button className="flex items-center gap-x-2 px-4 py-1.5 hover:bg-gray-100 dark:hover:bg-white/10 transition-all">
+            <span className="inline-block w-5">
               <BoostIcon />
             </span>
+            <span className="text-sm font-medium">{boostCount}</span>
           </button>
         </div>
 
@@ -35,7 +48,6 @@ const ActionsBar = ({ likeCount, boostCount }) => {
             </span>
             Save
           </button>
-          {/* Save dropdown - simplified as static for now */}
         </div>
       </div>
     </div>

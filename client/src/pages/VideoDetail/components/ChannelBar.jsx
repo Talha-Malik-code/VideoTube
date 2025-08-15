@@ -1,18 +1,29 @@
 import React from "react";
 import ChannelAvatar from "../../Home/videoComponents/ChannelAvatar";
 import AButton from "../../../component/AButton";
+import LoaderIcon from "../../../component/iconComponents/LoaderIcon";
 
-const ChannelBar = ({ channel, isSubscribed, onSubscriptionToggle }) => {
+const ChannelBar = ({
+  channel,
+  isSubscribed,
+  onSubscriptionToggle,
+  isSubscribing,
+  subscriberCount,
+}) => {
   return (
     <div className="mt-4 flex items-center justify-between">
       <div className="flex items-center gap-x-4">
         <div className="mt-2 h-12 w-12 shrink-0">
-          <ChannelAvatar src={channel.avatar} alt={channel.name} size={48} />
+          <ChannelAvatar
+            src={channel.avatar}
+            alt={channel.fullName}
+            size={48}
+          />
         </div>
         <div className="block">
-          <p className="text-gray-900 dark:text-gray-200">{channel.name}</p>
+          <p className="text-gray-900 dark:text-gray-200">{channel.fullName}</p>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            {channel.subscribers}
+            {subscriberCount}
           </p>
         </div>
       </div>
@@ -24,6 +35,7 @@ const ChannelBar = ({ channel, isSubscribed, onSubscriptionToggle }) => {
               : ""
           }`}
           onClick={onSubscriptionToggle}
+          disabled={isSubscribing}
         >
           <span className="inline-block w-5">
             {isSubscribed ? (
