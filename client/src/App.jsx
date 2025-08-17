@@ -9,16 +9,26 @@ import Login from "./pages/Login/Login";
 import ProtectedRoute from "./component/ProtectedRoute";
 import Home from "./pages/Home/Home";
 import VideoDetail from "./pages/VideoDetail/VideoDetail";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useEffect } from "react";
 import { checkAuthStatus } from "./app/features/userSlice";
+import AuthDialogBox from "./component/dialogBox/authDialogBox";
+import {
+  closeDialog,
+  selectIsDialogOpen,
+} from "./app/features/dialogToggleSlice";
 
 function App() {
   const dispatch = useDispatch();
+  const isDialogOpen = useSelector(selectIsDialogOpen);
 
   useEffect(() => {
     dispatch(checkAuthStatus());
   }, [dispatch]);
+
+  function handleCloseDialog() {
+    dispatch(closeDialog());
+  }
 
   return (
     <BrowserRouter>
@@ -34,6 +44,7 @@ function App() {
         <Route path="/register" element={<Register />} />
       </Routes>
       <ToastContainer position="bottom-right" />
+      <AuthDialogBox isOpen={isDialogOpen} onClose={handleCloseDialog} />
     </BrowserRouter>
   );
 }

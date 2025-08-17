@@ -207,20 +207,18 @@ const getVideoById = asyncHandler(async (req, res) => {
           },
           {
             $addFields: {
-              subscribersCount: {
-                $size: "$subscribers",
-              },
+              subscribersCount: { $size: "$subscribers" },
               isSubscribed: {
-                $cond: {
-                  if: {
-                    $in: [
-                      new mongoose.Types.ObjectId(req.user?._id),
-                      "$subscribers",
-                    ],
+                $in: [
+                  new mongoose.Types.ObjectId(req.user?._id),
+                  {
+                    $reduce: {
+                      input: "$subscribers",
+                      initialValue: [],
+                      in: { $concatArrays: ["$$value", ["$$this.subscriber"]] },
+                    },
                   },
-                  then: true,
-                  else: false,
-                },
+                ],
               },
             },
           },
@@ -231,6 +229,7 @@ const getVideoById = asyncHandler(async (req, res) => {
               avatar: 1,
               subscribersCount: 1,
               isSubscribed: 1,
+              subscribers: 1,
             },
           },
         ],

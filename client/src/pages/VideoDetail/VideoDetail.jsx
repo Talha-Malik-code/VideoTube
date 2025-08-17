@@ -23,6 +23,8 @@ import {
   selectLikeCount,
 } from "../../app/features/videoSlice";
 import VideoNotFound from "./VideoNotFound";
+import { selectIsLoggedIn } from "../../app/features/userSlice";
+import { openDialog } from "../../app/features/dialogToggleSlice";
 
 // const sampleData = {
 //   _id: "687a4f2887763ab2f6c8fe59",
@@ -68,6 +70,7 @@ const VideoDetail = () => {
   const isSubscribing = useSelector(selectIsSubscribing);
   const isLiking = useSelector(selectIsLiking);
   const loading = useSelector(selectIsLoading);
+  const isLoggedIn = useSelector(selectIsLoggedIn);
 
   console.log("VideoDetail state:", {
     videoData,
@@ -78,11 +81,19 @@ const VideoDetail = () => {
   });
 
   const handleSubscriptionToggle = async () => {
-    await dispatch(toggleSubscription(videoData.owner._id));
+    if (!isLoggedIn) {
+      dispatch(openDialog());
+    } else {
+      await dispatch(toggleSubscription(videoData.owner._id));
+    }
   };
 
   const handleLikeToggle = async () => {
-    await dispatch(toggleLike(id));
+    if (!isLoggedIn) {
+      dispatch(openDialog());
+    } else {
+      await dispatch(toggleLike(id));
+    }
   };
 
   useEffect(() => {

@@ -10,6 +10,7 @@ import {
   updateVideoDetails,
   updateVideoThumbnail,
 } from "../controllers/video.controller.js";
+import { addUserToRequest } from "../middlewares/addUserToRequest.js";
 
 const router = Router();
 
@@ -33,7 +34,7 @@ router
 
 router
   .route("/:videoId")
-  .get(getVideoById)
+  .get(addUserToRequest, getVideoById)
   .patch(verifyJWT, updateVideoDetails)
   .delete(verifyJWT, deleteVideo);
 

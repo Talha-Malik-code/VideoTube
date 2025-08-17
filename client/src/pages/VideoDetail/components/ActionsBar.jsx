@@ -10,9 +10,6 @@ const ActionsBar = ({
   isLiking,
   onLikeToggle,
 }) => {
-  // Debug: Log the values to see what's happening
-  console.log("ActionsBar props:", { likeCount, isLiked, isLiking });
-
   return (
     <div className="mt-4 w-full">
       <div className="flex items-center justify-between gap-x-4 md:justify-end lg:justify-between xl:justify-end">
