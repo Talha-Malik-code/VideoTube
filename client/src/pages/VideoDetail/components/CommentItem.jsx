@@ -34,6 +34,7 @@ const CommentItem = ({ comment }) => {
     }
     setIsEditing(true);
     setEditContent(comment.content);
+    setShowActions(false);
   };
 
   const handleSave = async () => {

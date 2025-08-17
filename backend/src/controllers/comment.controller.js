@@ -106,9 +106,47 @@ const addComment = asyncHandler(async (req, res) => {
     throw new ApiError(500, "Error creating comment");
   }
 
+  const populatedComment = await Comment.aggregate([
+    {
+      $match: {
+        _id: comment._id,
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "owner",
+        pipeline: [
+          {
+            $project: {
+              username: 1,
+              fullName: 1,
+              avatar: 1,
+            },
+          },
+        ],
+      },
+    },
+    {
+      $unwind: "$owner",
+    },
+    {
+      $project: {
+        content: 1,
+        createdAt: 1,
+        updatedAt: 1,
+        owner: 1,
+      },
+    },
+  ]);
+
   return res
     .status(200)
-    .json(new ApiResponse(200, comment, "Comment created successfully"));
+    .json(
+      new ApiResponse(200, populatedComment[0], "Comment created successfully")
+    );
 });
 
 const updateComment = asyncHandler(async (req, res) => {
@@ -136,6 +174,42 @@ const updateComment = asyncHandler(async (req, res) => {
   comment.content = content;
   comment.save({ validateBeforeSave: false });
 
+  const populatedComment = await Comment.aggregate([
+    {
+      $match: {
+        _id: comment._id,
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "owner",
+        pipeline: [
+          {
+            $project: {
+              username: 1,
+              fullName: 1,
+              avatar: 1,
+            },
+          },
+        ],
+      },
+    },
+    {
+      $unwind: "$owner",
+    },
+    {
+      $project: {
+        content: 1,
+        createdAt: 1,
+        updatedAt: 1,
+        owner: 1,
+      },
+    },
+  ]);
+
   // const updatedComment = await Comment.findByIdAndUpdate(
   //     commentId,
   //     {
@@ -152,7 +226,9 @@ const updateComment = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, comment, "Comment updated successfully"));
+    .json(
+      new ApiResponse(200, populatedComment, "Comment updated successfully")
+    );
 });
 
 const deleteComment = asyncHandler(async (req, res) => {
