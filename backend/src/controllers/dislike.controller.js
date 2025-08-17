@@ -47,7 +47,7 @@ const toggleCommentDislike = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid comment id");
   }
 
-  const dislikeExists = Dislike.findOneAndDelete({
+  const dislikeExists = await Dislike.findOneAndDelete({
     comment: commentId,
     dislikedBy: req.user?._id,
   });
@@ -55,13 +55,13 @@ const toggleCommentDislike = asyncHandler(async (req, res) => {
   let newDislike;
 
   if (!dislikeExists) {
-    newDislike = Dislike.create({
+    newDislike = await Dislike.create({
       comment: commentId,
       dislikedBy: req.user?._id,
     });
   }
 
-  const dislikeCount = Dislike.countDocuments({ comment: commentId });
+  const dislikeCount = await Dislike.countDocuments({ comment: commentId });
 
   return res.status(200).json(
     new ApiResponse(
@@ -97,7 +97,7 @@ const toggleTweetDislike = asyncHandler(async (req, res) => {
     });
   }
 
-  const dislikeCount = Dislike.countDocuments({ tweet: tweetId });
+  const dislikeCount = await Dislike.countDocuments({ tweet: tweetId });
 
   return res.status(200).json(
     new ApiResponse(200, {

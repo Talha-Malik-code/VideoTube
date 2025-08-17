@@ -1,230 +1,391 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useParams } from "react-router-dom";
 import {
-  updateComment,
-  deleteComment,
+  getVideoComments,
+  selectReplies,
+  selectReplyPagination,
+  selectIsGettingReplies,
 } from "../../../app/features/commentSlice";
+import {
+  toggleCommentLike,
+  selectCommentLikeState,
+  initializeCommentLikeState,
+} from "../../../app/features/likeSlice";
+import {
+  toggleCommentDislike,
+  selectCommentDislikeState,
+  initializeCommentDislikeState,
+} from "../../../app/features/dislikeSlice";
 import {
   selectIsLoggedIn,
   selectUserData,
 } from "../../../app/features/userSlice";
 import { openDialog } from "../../../app/features/dialogToggleSlice";
-import LikeIcon from "../../../component/iconComponents/LikeIcon";
-import BoostIcon from "../../../component/iconComponents/BoostIcon";
-import CloseCircleIcon from "../../../component/iconComponents/CloseCircleIcon";
+import { formatDistanceToNow } from "date-fns";
 
-const CommentItem = ({ comment }) => {
+const CommentItem = ({
+  comment,
+  videoId,
+  onReply,
+  isReplying,
+  replyContent,
+  setReplyContent,
+  onAddReply,
+  onReplyKeyPress,
+  onCancelReply,
+  openReplyId,
+  setOpenReplyId,
+}) => {
   const dispatch = useDispatch();
+  const { id } = useParams();
   const isLoggedIn = useSelector(selectIsLoggedIn);
   const userData = useSelector(selectUserData);
-  const isUpdating = useSelector((state) => state.comment.isUpdating);
-  const isDeleting = useSelector((state) => state.comment.isDeleting);
 
-  const [isEditing, setIsEditing] = useState(false);
-  const [editContent, setEditContent] = useState(comment.content);
-  const [showActions, setShowActions] = useState(false);
+  // Get like/dislike state for this comment
+  const { isLiked, likeCount } = useSelector((state) =>
+    selectCommentLikeState(state, comment._id)
+  );
+  const { isDisliked, dislikeCount } = useSelector((state) =>
+    selectCommentDislikeState(state, comment._id)
+  );
 
-  const isOwner = userData?._id === comment.owner._id;
-  const timeAgo = getTimeAgo(comment.createdAt);
+  // Get replies for this comment
+  const replies = useSelector((state) => selectReplies(state, comment._id));
+  const replyPagination = useSelector((state) =>
+    selectReplyPagination(state, comment._id)
+  );
+  const isGettingReplies = useSelector((state) =>
+    selectIsGettingReplies(state, comment._id)
+  );
 
-  const handleEdit = () => {
-    if (!isLoggedIn) {
-      dispatch(openDialog());
-      return;
-    }
-    setIsEditing(true);
-    setEditContent(comment.content);
-    setShowActions(false);
-  };
+  const [showReplies, setShowReplies] = useState(false);
+  const [localReplyContent, setLocalReplyContent] = useState("");
 
-  const handleSave = async () => {
-    if (editContent.trim() === comment.content) {
-      setIsEditing(false);
-      return;
-    }
-
-    try {
-      await dispatch(
-        updateComment({ commentId: comment._id, content: editContent.trim() })
+  // Initialize like/dislike state for this comment
+  useEffect(() => {
+    if (comment) {
+      dispatch(
+        initializeCommentLikeState({
+          commentId: comment._id,
+          isLiked: comment.isLiked || false,
+          likeCount: comment.likeCount || 0,
+        })
       );
-      setIsEditing(false);
-    } catch (error) {
-      console.error("Failed to update comment:", error);
+
+      dispatch(
+        initializeCommentDislikeState({
+          commentId: comment._id,
+          isDisliked: comment.isDisliked || false,
+          dislikeCount: comment.dislikeCount || 0,
+        })
+      );
     }
-  };
+  }, [comment, dispatch]);
 
-  const handleCancel = () => {
-    setIsEditing(false);
-    setEditContent(comment.content);
-  };
+  useEffect(() => {
+    // Load replies when showReplies is true
+    if (showReplies && comment.replyCount > 0 && replies.length === 0) {
+      dispatch(
+        getVideoComments({
+          videoId: id,
+          parentId: comment._id,
+          page: 1,
+          limit: 10,
+        })
+      );
+    }
+  }, [
+    showReplies,
+    comment.replyCount,
+    replies.length,
+    dispatch,
+    comment._id,
+    id,
+  ]);
 
-  const handleDelete = async () => {
+  const handleLikeToggle = async () => {
     if (!isLoggedIn) {
       dispatch(openDialog());
       return;
     }
 
-    if (window.confirm("Are you sure you want to delete this comment?")) {
-      try {
-        await dispatch(deleteComment(comment._id));
-      } catch (error) {
-        console.error("Failed to delete comment:", error);
-      }
+    await dispatch(toggleCommentLike(comment._id));
+    if (isDisliked) {
+      await dispatch(toggleCommentDislike(comment._id));
     }
   };
 
-  const handleLike = () => {
+  const handleDislikeToggle = async () => {
     if (!isLoggedIn) {
       dispatch(openDialog());
+      return;
     }
-    // TODO: Implement comment like functionality
+
+    await dispatch(toggleCommentDislike(comment._id));
+    if (isLiked) {
+      await dispatch(toggleCommentLike(comment._id));
+    }
   };
 
-  const handleDislike = () => {
+  const handleReplyClick = () => {
     if (!isLoggedIn) {
       dispatch(openDialog());
+      return;
     }
-    // TODO: Implement comment dislike functionality
+
+    // Close any other open reply inputs
+    if (openReplyId !== comment._id) {
+      setOpenReplyId(comment._id);
+      setLocalReplyContent("");
+    } else {
+      setOpenReplyId(null);
+      setLocalReplyContent("");
+    }
   };
 
-  if (isEditing) {
-    return (
-      <div className="flex gap-x-4">
-        <div className="mt-2 h-11 w-11 shrink-0">
-          <img
-            src={comment.owner.avatar}
-            alt={comment.owner.username}
-            className="h-full w-full rounded-full"
-          />
-        </div>
-        <div className="block w-full">
-          <div className="mb-2">
-            <textarea
-              value={editContent}
-              onChange={(e) => setEditContent(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 dark:border-white/20 bg-transparent px-3 py-2 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 outline-none focus:border-[#ae7aff]"
-              placeholder="Edit your comment..."
-              rows="3"
-            />
-          </div>
-          <div className="flex gap-x-2">
-            <button
-              onClick={handleSave}
-              disabled={isUpdating}
-              className="rounded-lg bg-[#ae7aff] px-3 py-1.5 text-sm font-medium text-black hover:bg-[#9d6aee] disabled:opacity-50"
-            >
-              {isUpdating ? "Saving..." : "Save"}
-            </button>
-            <button
-              onClick={handleCancel}
-              className="rounded-lg border border-gray-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const handleShowReplies = () => {
+    setShowReplies(!showReplies);
+  };
+
+  const handleLoadMoreReplies = () => {
+    if (replyPagination.hasNextPage) {
+      dispatch(
+        getVideoComments({
+          videoId: id,
+          parentId: comment._id,
+          page: replyPagination.page + 1,
+          limit: replyPagination.limit,
+        })
+      );
+    }
+  };
+
+  const handleAddReply = () => {
+    if (!localReplyContent.trim()) return;
+
+    onAddReply(comment._id, localReplyContent);
+    setLocalReplyContent("");
+    setOpenReplyId(null);
+  };
+
+  const handleCancelReply = () => {
+    setLocalReplyContent("");
+    setOpenReplyId(null);
+  };
+
+  const handleReplyKeyPress = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleAddReply();
+    }
+  };
+
+  const canEdit = userData?._id === comment.owner._id;
+  const canDelete = userData?._id === comment.owner._id;
+  const isReplyInputOpen = openReplyId === comment._id;
 
   return (
-    <div className="relative">
-      <div className="flex gap-x-4">
-        <div className="mt-2 h-11 w-11 shrink-0">
-          <img
-            src={comment.owner.avatar}
-            alt={comment.owner.username}
-            className="h-full w-full rounded-full"
-          />
-        </div>
-        <div className="block w-full">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="flex items-center text-gray-700 dark:text-gray-200">
-                {comment.owner.fullName} ·
-                <span className="text-sm ml-1">{timeAgo}</span>
-              </p>
-              <p className="text-sm text-gray-600 dark:text-gray-200">
-                @{comment.owner.username}
-              </p>
+    <div className="space-y-3">
+      {/* Main Comment */}
+      <div className="flex gap-x-3">
+        <div className="mt-2 h-10 w-10 shrink-0">
+          {comment.owner?.avatar ? (
+            <img
+              src={comment.owner.avatar}
+              alt={comment.owner.username || "user"}
+              className="h-full w-full rounded-full"
+            />
+          ) : (
+            <div className="flex w-full h-full items-start justify-start">
+              <svg
+                fill="#fff"
+                className="h-8 w-8 rounded-full"
+                viewBox="0 0 35 35"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path d="M17.5,16.383a8.067,8.067,0,1,1,8.067-8.067A8.076,8.076,0,0,1,17.5,16.383Zm0-13.633a5.567,5.567,0,1,0,5.567,5.566A5.573,5.573,0,0,0,17.5,2.75Z"></path>
+                <path d="M31.477,34.75a1.25,1.25,0,0,1-1.23-1.037A12.663,12.663,0,0,0,17.5,22.852,12.663,12.663,0,0,0,4.753,33.713a1.25,1.25,0,0,1-2.464-.426A15.1,15.1,0,0,1,17.5,20.352,15.1,15.1,0,0,1,32.711,33.287a1.25,1.25,0,0,1-1.02,1.444A1.2,1.2,0,0,1,31.477,34.75Z"></path>
+              </svg>
             </div>
-            {isOwner && (
-              <div className="relative">
-                <button
-                  onClick={() => setShowActions(!showActions)}
-                  className="p-1 hover:bg-white/10 rounded"
-                >
-                  <CloseCircleIcon className="w-4 h-4" />
-                </button>
-                {showActions && (
-                  <div className="absolute right-0 top-full z-10 w-32 rounded-lg bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 p-2 shadow-lg">
-                    <button
-                      onClick={handleEdit}
-                      className="w-full text-left px-2 py-1 text-sm text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 rounded"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={handleDelete}
-                      disabled={isDeleting}
-                      className="w-full text-left px-2 py-1 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-white/10 rounded"
-                    >
-                      {isDeleting ? "Deleting..." : "Delete"}
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
+          )}
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-x-2 mb-1">
+            <span className="font-medium text-gray-900 dark:text-white text-sm">
+              {comment.owner?.fullName ||
+                comment.owner?.username ||
+                "Unknown User"}
+            </span>
+            <span className="text-gray-500 dark:text-gray-400 text-xs">
+              {formatDistanceToNow(new Date(comment.createdAt), {
+                addSuffix: true,
+              })}
+            </span>
           </div>
-          <p className="mt-3 text-sm text-gray-800 dark:text-gray-200">
+
+          <p className="text-gray-900 dark:text-white text-sm mb-2">
             {comment.content}
           </p>
 
           {/* Comment Actions */}
-          <div className="mt-3 flex items-center gap-x-4">
+          <div className="flex items-center gap-x-4 text-xs">
             <button
-              onClick={handleLike}
-              className="flex items-center gap-x-2 text-sm text-gray-400 hover:text-white"
+              onClick={handleLikeToggle}
+              className={`flex items-center gap-x-1 hover:text-[#ae7aff] transition-colors ${
+                isLiked ? "text-[#ae7aff]" : "text-gray-500 dark:text-gray-400"
+              }`}
             >
-              <LikeIcon filled={comment.isLiked} className="w-4 h-4" />
-              <span>{comment.likeCount || 0}</span>
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
+              </svg>
+              {likeCount}
             </button>
+
             <button
-              onClick={handleDislike}
-              className="flex items-center gap-x-2 text-sm text-gray-400 hover:text-white"
+              onClick={handleDislikeToggle}
+              className={`flex items-center gap-x-1 hover:text-[#ae7aff] transition-colors ${
+                isDisliked
+                  ? "text-[#ae7aff]"
+                  : "text-gray-500 dark:text-gray-400"
+              }`}
             >
-              <BoostIcon filled={false} className="w-4 h-4" />
-              <span>0</span>
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M18 9.5a1.5 1.5 0 11-3 0v-6a1.5 1.5 0 013 0v6zM14 9.667v-5.43a2 2 0 00-1.105-1.79l-.05-.025A4 4 0 0011.055 2H5.64a2 2 0 00-1.962 1.608l-1.2 6A2 2 0 004.44 12H8v4a2 2 0 002 2 1 1 0 001-1v-.667a4 4 0 01.8-2.4l1.4-1.866a4 4 0 00.8-2.4z" />
+              </svg>
+              {dislikeCount}
             </button>
-            <button className="text-sm text-gray-400 hover:text-white">
+
+            <button
+              onClick={handleReplyClick}
+              className="text-gray-500 dark:text-gray-400 hover:text-[#ae7aff] transition-colors"
+            >
               Reply
             </button>
+
+            {canEdit && (
+              <button className="text-gray-500 dark:text-gray-400 hover:text-[#ae7aff] transition-colors">
+                Edit
+              </button>
+            )}
+
+            {canDelete && (
+              <button className="text-gray-500 dark:text-gray-400 hover:text-red-500 transition-colors">
+                Delete
+              </button>
+            )}
           </div>
+
+          {/* Reply Input */}
+          {isReplyInputOpen && (
+            <div className="mt-3 flex gap-x-3">
+              <div className="mt-2 h-8 w-8 shrink-0">
+                {userData?.avatar ? (
+                  <img
+                    src={userData.avatar}
+                    alt={userData.username || "user"}
+                    className="h-full w-full rounded-full"
+                  />
+                ) : (
+                  <div className="flex w-full h-full items-start justify-start">
+                    <svg
+                      fill="#fff"
+                      className="h-6 w-6 rounded-full"
+                      viewBox="0 0 35 35"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path d="M17.5,16.383a8.067,8.067,0,1,1,8.067-8.067A8.076,8.076,0,0,1,17.5,16.383Zm0-13.633a5.567,5.567,0,1,0,5.567,5.566A5.573,5.573,0,0,0,17.5,2.75Z"></path>
+                      <path d="M31.477,34.75a1.25,1.25,0,0,1-1.23-1.037A12.663,12.663,0,0,0,17.5,22.852,12.663,12.663,0,0,0,4.753,33.713a1.25,1.25,0,0,1-2.464-.426A15.1,15.1,0,0,1,17.5,20.352,15.1,15.1,0,0,1,32.711,33.287a1.25,1.25,0,0,1-1.02,1.444A1.2,1.2,0,0,1,31.477,34.75Z"></path>
+                    </svg>
+                  </div>
+                )}
+              </div>
+              <div className="flex-1">
+                <input
+                  type="text"
+                  value={localReplyContent}
+                  onChange={(e) => setLocalReplyContent(e.target.value)}
+                  onKeyPress={handleReplyKeyPress}
+                  placeholder="Write a reply..."
+                  className="w-full rounded-lg border border-gray-300 dark:border-white/20 bg-transparent px-3 py-2 placeholder-gray-500 dark:placeholder-white/60 text-gray-900 dark:text-white outline-none focus:border-[#ae7aff] text-sm"
+                />
+                <div className="mt-2 flex gap-x-2">
+                  <button
+                    onClick={handleAddReply}
+                    disabled={!localReplyContent.trim()}
+                    className="rounded-lg bg-[#ae7aff] px-3 py-1 text-xs font-medium text-black hover:bg-[#9d6aee] disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Reply
+                  </button>
+                  <button
+                    onClick={handleCancelReply}
+                    className="rounded-lg border border-gray-300 dark:border-white/20 px-3 py-1 text-xs text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
-      <hr className="my-4 border-gray-200 dark:border-white/20" />
+
+      {/* Replies Section */}
+      {comment.replyCount > 0 && (
+        <div className="ml-12">
+          <div className="flex items-center gap-x-2 mb-2">
+            <button
+              onClick={handleShowReplies}
+              className="text-sm text-[#ae7aff] hover:underline"
+            >
+              {showReplies ? "Hide" : "Show"} {comment.replyCount}{" "}
+              {comment.replyCount === 1 ? "reply" : "replies"}
+            </button>
+
+            {/* Loading indicator for replies */}
+            {isGettingReplies && (
+              <div className="flex items-center gap-x-1">
+                <div className="w-3 h-3 border border-[#ae7aff] border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-xs text-[#ae7aff]">Loading...</span>
+              </div>
+            )}
+          </div>
+
+          {showReplies && (
+            <div className="space-y-3">
+              {replies.map((reply) => (
+                <CommentItem
+                  key={reply._id}
+                  comment={reply}
+                  videoId={videoId}
+                  onReply={onReply}
+                  isReplying={isReplying}
+                  replyContent={replyContent}
+                  setReplyContent={setReplyContent}
+                  onAddReply={onAddReply}
+                  onReplyKeyPress={onReplyKeyPress}
+                  onCancelReply={onCancelReply}
+                  openReplyId={openReplyId}
+                  setOpenReplyId={setOpenReplyId}
+                />
+              ))}
+
+              {replyPagination.hasNextPage && (
+                <button
+                  onClick={handleLoadMoreReplies}
+                  disabled={isGettingReplies}
+                  className="text-sm text-[#ae7aff] hover:underline disabled:opacity-50"
+                >
+                  {isGettingReplies ? "Loading..." : "Load more replies"}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
-
-// Helper function to format time ago
-function getTimeAgo(dateString) {
-  const date = new Date(dateString);
-  const currentDate = new Date();
-  const diffTime = Math.abs(currentDate - date);
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  const diffHours = Math.ceil(diffTime / (1000 * 60 * 60));
-  const diffMinutes = Math.ceil(diffTime / (1000 * 60));
-
-  if (diffDays > 0) {
-    return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
-  } else if (diffHours > 0) {
-    return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
-  } else if (diffMinutes > 0) {
-    return `${diffMinutes} minute${diffMinutes > 1 ? "s" : ""} ago`;
-  } else {
-    return "Just now";
-  }
-}
 
 export default CommentItem;

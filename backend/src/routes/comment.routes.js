@@ -4,12 +4,15 @@ import {
   addComment,
   deleteComment,
   getVideoComments,
+  getCommentReplies,
   updateComment,
 } from "../controllers/comment.controller.js";
 
 const router = Router();
 
 router.route("/:videoId").get(getVideoComments).post(verifyJWT, addComment);
+
+router.route("/replies/:commentId").get(getCommentReplies);
 
 router
   .route("/c/:commentId")

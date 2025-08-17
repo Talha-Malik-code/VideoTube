@@ -3,6 +3,7 @@ import { fetchData, updateData } from "../../utils";
 
 const initialState = {
   comments: [],
+  replies: {},
   pagination: {
     totalDocs: 0,
     limit: 10,
@@ -11,24 +12,29 @@ const initialState = {
     hasNextPage: false,
     hasPrevPage: false,
   },
+  replyPagination: {},
   isLoading: false,
   isAdding: false,
   isUpdating: false,
   isDeleting: false,
+  isGettingReplies: {},
   error: null,
 };
 
 export const getVideoComments = createAsyncThunk(
   "comment/getVideoComments",
-  async ({ videoId, page = 1, limit = 10 }, { rejectWithValue }) => {
+  async (
+    { videoId, page = 1, limit = 10, parentId = null },
+    { rejectWithValue }
+  ) => {
     try {
-      const data = await fetchData(
-        `comment/${videoId}?page=${page}&limit=${limit}`,
-        {
-          credentials: "include",
-        }
-      );
-      return data;
+      const queryParams = `page=${page}&limit=${limit}${
+        parentId ? `&parentId=${parentId}` : ""
+      }`;
+      const data = await fetchData(`comment/${videoId}?${queryParams}`, {
+        credentials: "include",
+      });
+      return { data, parentId };
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || "Failed to fetch comments"
@@ -37,12 +43,35 @@ export const getVideoComments = createAsyncThunk(
   }
 );
 
+export const getCommentReplies = createAsyncThunk(
+  "comment/getCommentReplies",
+  async ({ commentId, page = 1, limit = 10 }, { rejectWithValue }) => {
+    try {
+      const data = await fetchData(
+        `comment/replies/${commentId}?page=${page}&limit=${limit}`,
+        {
+          credentials: "include",
+        }
+      );
+      return { commentId, data };
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to fetch replies"
+      );
+    }
+  }
+);
+
 export const addComment = createAsyncThunk(
   "comment/addComment",
-  async ({ videoId, content }, { rejectWithValue }) => {
+  async ({ videoId, content, parentId = null }, { rejectWithValue }) => {
     try {
-      const data = await updateData(`comment/${videoId}`, { content }, "POST");
-      return data;
+      const data = await updateData(
+        `comment/${videoId}`,
+        { content, parentId },
+        "POST"
+      );
+      return { data, parentId };
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || "Failed to add comment"
@@ -97,25 +126,118 @@ const commentSlice = createSlice({
   reducers: {
     clearComments: (state) => {
       state.comments = [];
+      state.replies = {};
       state.pagination = initialState.pagination;
+      state.replyPagination = {};
+      state.isGettingReplies = {};
     },
     setCommentPage: (state, action) => {
       state.pagination.page = action.payload;
+    },
+    setReplyPage: (state, action) => {
+      const { commentId, page } = action.payload;
+      if (!state.replyPagination[commentId]) {
+        state.replyPagination[commentId] = { ...initialState.pagination };
+      }
+      state.replyPagination[commentId].page = page;
+    },
+    clearReplies: (state, action) => {
+      const commentId = action.payload;
+      if (commentId) {
+        delete state.replies[commentId];
+        delete state.replyPagination[commentId];
+        delete state.isGettingReplies[commentId];
+      } else {
+        state.replies = {};
+        state.replyPagination = {};
+        state.isGettingReplies = {};
+      }
+    },
+    initializeCommentLikeState: () => {
+      // This will be handled by the like/dislike slices
     },
   },
   extraReducers: (builder) => {
     builder
       // Get video comments
-      .addCase(getVideoComments.pending, (state) => {
-        state.isLoading = true;
+      .addCase(getVideoComments.pending, (state, action) => {
+        const { parentId } = action.meta.arg;
+        if (parentId) {
+          // This is for replies
+          state.isGettingReplies[parentId] = true;
+        } else {
+          // This is for top-level comments
+          state.isLoading = true;
+        }
         state.error = null;
       })
       .addCase(getVideoComments.fulfilled, (state, action) => {
-        state.isLoading = false;
+        const { data, parentId } = action.payload;
         // Handle both direct response and nested data structure
-        const responseData = action.payload?.data || action.payload;
-        state.comments = responseData?.docs || responseData || [];
-        state.pagination = {
+        const responseData = data?.data || data;
+
+        if (parentId) {
+          // This is for replies
+          if (!state.replies[parentId]) {
+            state.replies[parentId] = [];
+          }
+          state.replies[parentId] = responseData?.docs || responseData || [];
+          state.isGettingReplies[parentId] = false;
+
+          if (!state.replyPagination[parentId]) {
+            state.replyPagination[parentId] = {};
+          }
+          state.replyPagination[parentId] = {
+            totalDocs: responseData?.totalDocs || 0,
+            limit: responseData?.limit || 10,
+            page: responseData?.page || 1,
+            totalPages: responseData?.totalPages || 1,
+            hasNextPage: responseData?.hasNextPage || false,
+            hasPrevPage: responseData?.hasPrevPage || false,
+          };
+        } else {
+          // This is for top-level comments
+          state.comments = responseData?.docs || responseData || [];
+          state.pagination = {
+            totalDocs: responseData?.totalDocs || 0,
+            limit: responseData?.limit || 10,
+            page: responseData?.page || 1,
+            totalPages: responseData?.totalPages || 1,
+            hasNextPage: responseData?.hasNextPage || false,
+            hasPrevPage: responseData?.hasPrevPage || false,
+          };
+          state.isLoading = false;
+        }
+      })
+      .addCase(getVideoComments.rejected, (state, action) => {
+        const { parentId } = action.meta.arg;
+        if (parentId) {
+          state.isGettingReplies[parentId] = false;
+        } else {
+          state.isLoading = false;
+        }
+        state.error = action.payload;
+      })
+      // Get comment replies
+      .addCase(getCommentReplies.pending, (state, action) => {
+        const { commentId } = action.meta.arg;
+        state.isGettingReplies[commentId] = true;
+        state.error = null;
+      })
+      .addCase(getCommentReplies.fulfilled, (state, action) => {
+        const { commentId, data } = action.payload;
+        const responseData = data?.data || data;
+
+        if (!state.replies[commentId]) {
+          state.replies[commentId] = [];
+        }
+        state.replies[commentId] = responseData?.docs || responseData || [];
+        state.isGettingReplies[commentId] = false;
+
+        if (!state.replyPagination[commentId]) {
+          state.replyPagination[commentId] = {};
+        }
+        state.replyPagination[commentId] = {
           totalDocs: responseData?.totalDocs || 0,
           limit: responseData?.limit || 10,
           page: responseData?.page || 1,
@@ -124,8 +246,9 @@ const commentSlice = createSlice({
           hasPrevPage: responseData?.hasPrevPage || false,
         };
       })
-      .addCase(getVideoComments.rejected, (state, action) => {
-        state.isLoading = false;
+      .addCase(getCommentReplies.rejected, (state, action) => {
+        const { commentId } = action.meta.arg;
+        state.isGettingReplies[commentId] = false;
         state.error = action.payload;
       })
       // Add comment
@@ -135,11 +258,26 @@ const commentSlice = createSlice({
       })
       .addCase(addComment.fulfilled, (state, action) => {
         state.isAdding = false;
+        const { data, parentId } = action.payload;
         // Handle both direct response and nested data structure
-        const commentData = action.payload?.data || action.payload;
+        const commentData = data?.data || data;
         if (commentData) {
-          state.comments.unshift(commentData);
-          state.pagination.totalDocs += 1;
+          if (parentId) {
+            // This is a reply
+            if (!state.replies[parentId]) {
+              state.replies[parentId] = [];
+            }
+            state.replies[parentId].unshift(commentData);
+
+            if (!state.replyPagination[parentId]) {
+              state.replyPagination[parentId] = { ...initialState.pagination };
+            }
+            state.replyPagination[parentId].totalDocs += 1;
+          } else {
+            // This is a top-level comment
+            state.comments.unshift(commentData);
+            state.pagination.totalDocs += 1;
+          }
         }
       })
       .addCase(addComment.rejected, (state, action) => {
@@ -156,12 +294,23 @@ const commentSlice = createSlice({
         // Handle both direct response and nested data structure
         const commentData = action.payload?.data || action.payload;
         if (commentData) {
-          const index = state.comments.findIndex(
+          // Update in top-level comments
+          const topLevelIndex = state.comments.findIndex(
             (comment) => comment._id === commentData._id
           );
-          if (index !== -1) {
-            state.comments[index] = commentData;
+          if (topLevelIndex !== -1) {
+            state.comments[topLevelIndex] = commentData;
           }
+
+          // Update in replies
+          Object.keys(state.replies).forEach((commentId) => {
+            const replyIndex = state.replies[commentId].findIndex(
+              (reply) => reply._id === commentData._id
+            );
+            if (replyIndex !== -1) {
+              state.replies[commentId][replyIndex] = commentData;
+            }
+          });
         }
       })
       .addCase(updateComment.rejected, (state, action) => {
@@ -175,13 +324,29 @@ const commentSlice = createSlice({
       })
       .addCase(deleteComment.fulfilled, (state, action) => {
         state.isDeleting = false;
+        const commentId = action.payload;
+
+        // Remove from top-level comments
         state.comments = state.comments.filter(
-          (comment) => comment._id !== action.payload
+          (comment) => comment._id !== commentId
         );
         state.pagination.totalDocs = Math.max(
           0,
           state.pagination.totalDocs - 1
         );
+
+        // Remove from replies
+        Object.keys(state.replies).forEach((parentId) => {
+          state.replies[parentId] = state.replies[parentId].filter(
+            (reply) => reply._id !== commentId
+          );
+          if (state.replyPagination[parentId]) {
+            state.replyPagination[parentId].totalDocs = Math.max(
+              0,
+              state.replyPagination[parentId].totalDocs - 1
+            );
+          }
+        });
       })
       .addCase(deleteComment.rejected, (state, action) => {
         state.isDeleting = false;
@@ -190,15 +355,27 @@ const commentSlice = createSlice({
   },
 });
 
-export const { clearComments, setCommentPage } = commentSlice.actions;
+export const {
+  clearComments,
+  setCommentPage,
+  setReplyPage,
+  clearReplies,
+  initializeCommentLikeState,
+} = commentSlice.actions;
 
-// Selectors
+// Memoized selectors with stable references
 export const selectComments = (state) => state.comment.comments;
+export const selectReplies = (state, commentId) =>
+  state.comment.replies[commentId] || [];
 export const selectCommentPagination = (state) => state.comment.pagination;
+export const selectReplyPagination = (state, commentId) =>
+  state.comment.replyPagination[commentId] || { ...initialState.pagination };
 export const selectIsCommentLoading = (state) => state.comment.isLoading;
 export const selectIsAddingComment = (state) => state.comment.isAdding;
 export const selectIsUpdatingComment = (state) => state.comment.isUpdating;
 export const selectIsDeletingComment = (state) => state.comment.isDeleting;
+export const selectIsGettingReplies = (state, commentId) =>
+  state.comment.isGettingReplies[commentId] || false;
 export const selectCommentError = (state) => state.comment.error;
 
 export default commentSlice.reducer;

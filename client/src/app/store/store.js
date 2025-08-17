@@ -3,6 +3,8 @@ import userReducer from "../features/userSlice";
 import videoReducer from "../features/videoSlice";
 import dialogToggleReducer from "../features/dialogToggleSlice";
 import commentReducer from "../features/commentSlice";
+import likeReducer from "../features/likeSlice";
+import dislikeReducer from "../features/dislikeSlice";
 
 const store = configureStore({
   reducer: {
@@ -10,6 +12,8 @@ const store = configureStore({
     video: videoReducer,
     dialogToggle: dialogToggleReducer,
     comment: commentReducer,
+    like: likeReducer,
+    dislike: dislikeReducer,
   },
 });
 

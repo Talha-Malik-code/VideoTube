@@ -21,19 +21,13 @@ const initialState = {
   currentVideo: null,
   videoDetails: null,
   subscriberCount: 0,
-  likeCount: 0,
-  dislikeCount: 0,
   isSubscribed: false,
-  isLiked: false,
-  isDisliked: false,
 
   isLoading: false,
   isUploading: false,
   isUpdating: false,
   isDeleting: false,
   isSubscribing: false,
-  isLiking: false,
-  isDisliking: false,
 
   error: null,
   uploadError: null,
@@ -154,37 +148,12 @@ export const toggleSubscription = createAsyncThunk(
   }
 );
 
-export const toggleLike = createAsyncThunk(
-  "video/toggleLike",
-  async (id, { rejectWithValue }) => {
-    try {
-      const data = await updateData(`like/toggle/v/${id}`, {}, "POST");
-      return data;
-    } catch (error) {
-      return rejectWithValue(error.message);
-    }
-  }
-);
-
-export const toggleDislike = createAsyncThunk(
-  "video/toggleDislike",
-  async (id, { rejectWithValue }) => {
-    try {
-      const data = await updateData(`dislike/toggle/v/${id}`, {}, "POST");
-      return data;
-    } catch (error) {
-      return rejectWithValue(error.message);
-    }
-  }
-);
-
 const videoSlice = createSlice({
   name: "video",
   initialState,
   reducers: {
     clearCurrentVideo: (state) => {
       state.currentVideo = null;
-      state.isLiked = false;
       state.isSubscribed = false;
     },
   },
@@ -220,11 +189,7 @@ const videoSlice = createSlice({
         state.videoDetails = action.payload;
         state.currentVideo = action.payload;
         state.subscriberCount = action.payload.owner.subscribersCount;
-        state.likeCount = action.payload.totalLikes;
         state.isSubscribed = action.payload.owner.isSubscribed;
-        state.isLiked = action.payload.isLiked;
-        state.dislikeCount = action.payload.totalDislikes;
-        state.isDisliked = action.payload.isDisliked;
       })
       .addCase(getVideoById.rejected, (state, action) => {
         state.isLoading = false;
@@ -297,32 +262,6 @@ const videoSlice = createSlice({
       .addCase(toggleSubscription.rejected, (state, action) => {
         state.isSubscribing = false;
         state.error = action.error.message;
-      })
-      .addCase(toggleLike.pending, (state) => {
-        state.isLiking = true;
-      })
-      .addCase(toggleLike.fulfilled, (state, action) => {
-        state.isLiking = false;
-        state.error = null;
-        state.isLiked = action.payload.isLiked;
-        state.likeCount = action.payload.likeCount;
-      })
-      .addCase(toggleLike.rejected, (state, action) => {
-        state.isLiking = false;
-        state.error = action.error.message;
-      })
-      .addCase(toggleDislike.pending, (state) => {
-        state.isDisliking = true;
-      })
-      .addCase(toggleDislike.fulfilled, (state, action) => {
-        state.isDisliking = false;
-        state.error = null;
-        state.isDisliked = action.payload.isDisliked;
-        state.dislikeCount = action.payload.dislikeCount;
-      })
-      .addCase(toggleDislike.rejected, (state, action) => {
-        state.isDisliking = false;
-        state.error = action.error.message;
       });
   },
 });
@@ -341,12 +280,6 @@ export const selectError = (state) => state.video.error;
 export const selectUploadError = (state) => state.video.uploadError;
 export const selectIsSubscribed = (state) => state.video.isSubscribed;
 export const selectIsSubscribing = (state) => state.video.isSubscribing;
-export const selectIsLiked = (state) => state.video.isLiked;
-export const selectIsLiking = (state) => state.video.isLiking;
 export const selectSubscriberCount = (state) => state.video.subscriberCount;
-export const selectLikeCount = (state) => state.video.likeCount;
-export const selectDislikeCount = (state) => state.video.dislikeCount;
-export const selectIsDisliked = (state) => state.video.isDisliked;
-export const selectIsDisliking = (state) => state.video.isDisliking;
 
 export default videoSlice.reducer;

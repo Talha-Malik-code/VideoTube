@@ -13,20 +13,23 @@ import {
   clearCurrentVideo,
   getVideoById,
   selectCurrentVideo,
-  selectIsLiked,
-  selectIsLiking,
-  selectIsLoading,
   selectIsSubscribed,
   selectIsSubscribing,
   toggleSubscription,
-  toggleLike,
   selectSubscriberCount,
-  selectLikeCount,
-  toggleDislike,
-  selectIsDisliked,
-  selectDislikeCount,
-  selectIsDisliking,
 } from "../../app/features/videoSlice";
+import {
+  toggleVideoLike,
+  selectVideoLikeState,
+  selectIsLiking,
+  initializeVideoLikeState,
+} from "../../app/features/likeSlice";
+import {
+  toggleVideoDislike,
+  selectVideoDislikeState,
+  selectIsDisliking,
+  initializeVideoDislikeState,
+} from "../../app/features/dislikeSlice";
 import VideoNotFound from "./VideoNotFound";
 import { selectIsLoggedIn } from "../../app/features/userSlice";
 import { openDialog } from "../../app/features/dialogToggleSlice";
@@ -69,16 +72,20 @@ const VideoDetail = () => {
   const dispatch = useDispatch();
   const videoData = useSelector(selectCurrentVideo);
   const isSubscribed = useSelector(selectIsSubscribed);
-  const isLiked = useSelector(selectIsLiked);
-  const isDisliked = useSelector(selectIsDisliked);
-  const dislikeCount = useSelector(selectDislikeCount);
   const subscriberCount = useSelector(selectSubscriberCount);
-  const likeCount = useSelector(selectLikeCount);
   const isSubscribing = useSelector(selectIsSubscribing);
+  const loading = useSelector((state) => state.video.isLoading);
+  const isLoggedIn = useSelector(selectIsLoggedIn);
+
+  // Get like/dislike state from the new slices
+  const { isLiked, likeCount } = useSelector((state) =>
+    selectVideoLikeState(state, id)
+  );
+  const { isDisliked, dislikeCount } = useSelector((state) =>
+    selectVideoDislikeState(state, id)
+  );
   const isLiking = useSelector(selectIsLiking);
   const isDisliking = useSelector(selectIsDisliking);
-  const loading = useSelector(selectIsLoading);
-  const isLoggedIn = useSelector(selectIsLoggedIn);
 
   console.log("VideoDetail state:", {
     videoData,
@@ -103,9 +110,9 @@ const VideoDetail = () => {
     if (!isLoggedIn) {
       dispatch(openDialog());
     } else {
-      await dispatch(toggleLike(id));
+      await dispatch(toggleVideoLike(id));
       if (isDisliked) {
-        await dispatch(toggleDislike(id));
+        await dispatch(toggleVideoDislike(id));
       }
     }
   };
@@ -114,9 +121,9 @@ const VideoDetail = () => {
     if (!isLoggedIn) {
       dispatch(openDialog());
     } else {
-      await dispatch(toggleDislike(id));
+      await dispatch(toggleVideoDislike(id));
       if (isLiked) {
-        await dispatch(toggleLike(id));
+        await dispatch(toggleVideoLike(id));
       }
     }
   };
@@ -131,6 +138,29 @@ const VideoDetail = () => {
       dispatch(clearCurrentVideo());
     };
   }, [id, dispatch]);
+
+  // Initialize like/dislike state when video data is loaded
+  useEffect(() => {
+    if (videoData) {
+      // Initialize like state
+      dispatch(
+        initializeVideoLikeState({
+          videoId: id,
+          isLiked: videoData.isLiked || false,
+          likeCount: videoData.totalLikes || 0,
+        })
+      );
+
+      // Initialize dislike state
+      dispatch(
+        initializeVideoDislikeState({
+          videoId: id,
+          isDisliked: videoData.isDisliked || false,
+          dislikeCount: videoData.totalDislikes || 0,
+        })
+      );
+    }
+  }, [videoData, id, dispatch]);
 
   if (loading) {
     return <VideoDetailSkeleton />;

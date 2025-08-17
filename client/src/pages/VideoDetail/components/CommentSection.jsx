@@ -23,6 +23,7 @@ const CommentSection = ({ videoId }) => {
 
   const [commentContent, setCommentContent] = useState("");
   const [showComments, setShowComments] = useState(false);
+  const [openReplyId, setOpenReplyId] = useState(null);
 
   useEffect(() => {
     if (videoId) {
@@ -43,6 +44,29 @@ const CommentSection = ({ videoId }) => {
       setCommentContent("");
     } catch (error) {
       console.error("Failed to add comment:", error);
+    }
+  };
+
+  const handleAddReply = async (parentId, content) => {
+    if (!isLoggedIn) {
+      dispatch(openDialog());
+      return;
+    }
+
+    if (!content.trim()) return;
+
+    try {
+      await dispatch(
+        addComment({
+          videoId,
+          content: content.trim(),
+          parentId,
+        })
+      );
+      // Reply will be automatically added to the replies array
+      // and the input will be closed by the CommentItem component
+    } catch (error) {
+      console.error("Failed to add reply:", error);
     }
   };
 
@@ -98,8 +122,6 @@ const CommentSection = ({ videoId }) => {
                       fill="#fff"
                       className="h-8 w-8 rounded-full"
                       viewBox="0 0 35 35"
-                      data-name="Layer 2"
-                      id="a7ce4915-3aac-4be4-ab11-f637a8342592"
                       xmlns="http://www.w3.org/2000/svg"
                     >
                       <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
@@ -176,7 +198,20 @@ const CommentSection = ({ videoId }) => {
             </div>
           ) : (
             comments.map((comment) => (
-              <CommentItem key={comment._id} comment={comment} />
+              <CommentItem
+                key={comment._id}
+                comment={comment}
+                videoId={videoId}
+                onReply={() => {}} // Not used anymore
+                isReplying={false} // Not used anymore
+                replyContent="" // Not used anymore
+                setReplyContent={() => {}} // Not used anymore
+                onAddReply={handleAddReply}
+                onReplyKeyPress={() => {}} // Not used anymore
+                onCancelReply={() => {}} // Not used anymore
+                openReplyId={openReplyId}
+                setOpenReplyId={setOpenReplyId}
+              />
             ))
           )}
         </div>

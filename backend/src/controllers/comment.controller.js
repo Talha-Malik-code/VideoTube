@@ -7,18 +7,126 @@ import mongoose, { isValidObjectId } from "mongoose";
 const getVideoComments = asyncHandler(async (req, res) => {
   //TODO: get all comments for a video
   const { videoId } = req.params;
-  const { page = 1, limit = 10 } = req.query;
+  const { page = 1, limit = 10, parentId = null } = req.query;
 
   if (!isValidObjectId(videoId)) {
     throw new ApiError(400, "Invalid video id");
   }
 
   const videoObjectId = new mongoose.Types.ObjectId(videoId);
+  const matchCondition = {
+    video: videoObjectId,
+  };
+
+  // If parentId is provided, get replies to that comment
+  if (parentId && isValidObjectId(parentId)) {
+    matchCondition.parent = new mongoose.Types.ObjectId(parentId);
+  } else {
+    // Get top-level comments (no parent)
+    matchCondition.parent = null;
+  }
+
+  const pipeline = [
+    {
+      $match: matchCondition,
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "owner",
+        pipeline: [
+          {
+            $project: {
+              username: 1,
+              fullName: 1,
+              avatar: 1,
+            },
+          },
+        ],
+      },
+    },
+    {
+      $lookup: {
+        from: "likes",
+        localField: "_id",
+        foreignField: "comment",
+        as: "likes",
+      },
+    },
+    {
+      $lookup: {
+        from: "dislikes",
+        localField: "_id",
+        foreignField: "comment",
+        as: "dislikes",
+      },
+    },
+    {
+      $addFields: {
+        owner: { $first: "$owner" },
+        likeCount: { $size: "$likes" },
+        dislikeCount: { $size: "$dislikes" },
+        isLiked: {
+          $cond: {
+            if: { $in: [req.user?._id, "$likes.likedBy"] },
+            then: true,
+            else: false,
+          },
+        },
+        isDisliked: {
+          $cond: {
+            if: { $in: [req.user?._id, "$dislikes.dislikedBy"] },
+            then: true,
+            else: false,
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        content: 1,
+        createdAt: 1,
+        updatedAt: 1,
+        owner: 1,
+        likeCount: 1,
+        dislikeCount: 1,
+        isLiked: 1,
+        isDisliked: 1,
+        replyCount: 1,
+        parent: 1,
+      },
+    },
+  ];
+
+  const comments = await Comment.aggregatePaginate(
+    Comment.aggregate(pipeline),
+    {
+      page: parseInt(page),
+      limit: parseInt(limit),
+    }
+  );
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, comments, "Comments fetched successfully"));
+});
+
+const getCommentReplies = asyncHandler(async (req, res) => {
+  const { commentId } = req.params;
+  const { page = 1, limit = 10 } = req.query;
+
+  if (!isValidObjectId(commentId)) {
+    throw new ApiError(400, "Invalid comment id");
+  }
+
+  const commentObjectId = new mongoose.Types.ObjectId(commentId);
 
   const pipeline = [
     {
       $match: {
-        video: videoObjectId,
+        parent: commentObjectId,
       },
     },
     {
@@ -47,12 +155,28 @@ const getVideoComments = asyncHandler(async (req, res) => {
       },
     },
     {
+      $lookup: {
+        from: "dislikes",
+        localField: "_id",
+        foreignField: "comment",
+        as: "dislikes",
+      },
+    },
+    {
       $addFields: {
         owner: { $first: "$owner" },
         likeCount: { $size: "$likes" },
+        dislikeCount: { $size: "$dislikes" },
         isLiked: {
           $cond: {
             if: { $in: [req.user?._id, "$likes.likedBy"] },
+            then: true,
+            else: false,
+          },
+        },
+        isDisliked: {
+          $cond: {
+            if: { $in: [req.user?._id, "$dislikes.dislikedBy"] },
             then: true,
             else: false,
           },
@@ -66,27 +190,27 @@ const getVideoComments = asyncHandler(async (req, res) => {
         updatedAt: 1,
         owner: 1,
         likeCount: 1,
+        dislikeCount: 1,
         isLiked: 1,
+        isDisliked: 1,
+        parent: 1,
       },
     },
   ];
 
-  const comments = await Comment.aggregatePaginate(
-    Comment.aggregate(pipeline),
-    {
-      page: parseInt(page),
-      limit: parseInt(limit),
-    }
-  );
+  const replies = await Comment.aggregatePaginate(Comment.aggregate(pipeline), {
+    page: parseInt(page),
+    limit: parseInt(limit),
+  });
 
   return res
     .status(200)
-    .json(new ApiResponse(200, comments, "Comments fetched successfully"));
+    .json(new ApiResponse(200, replies, "Replies fetched successfully"));
 });
 
 const addComment = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
-  const { content } = req.body;
+  const { content, parentId = null } = req.body;
 
   if (!videoId) {
     throw new ApiError(400, "Video id is required");
@@ -96,14 +220,35 @@ const addComment = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Content is required");
   }
 
+  // If this is a reply, verify the parent comment exists
+  if (parentId) {
+    if (!isValidObjectId(parentId)) {
+      throw new ApiError(400, "Invalid parent comment id");
+    }
+
+    const parentComment = await Comment.findById(parentId);
+    if (!parentComment) {
+      throw new ApiError(404, "Parent comment not found");
+    }
+  }
+
   const comment = await Comment.create({
     content,
     video: videoId,
     owner: req.user?._id,
+    parent: parentId,
   });
 
   if (!comment) {
     throw new ApiError(500, "Error creating comment");
+  }
+
+  // If this is a reply, update the parent comment's replyCount
+  if (parentId) {
+    await Comment.findByIdAndUpdate(parentId, {
+      $inc: { replyCount: 1 },
+      $push: { replies: comment._id },
+    });
   }
 
   const populatedComment = await Comment.aggregate([
@@ -138,6 +283,8 @@ const addComment = asyncHandler(async (req, res) => {
         createdAt: 1,
         updatedAt: 1,
         owner: 1,
+        replyCount: 1,
+        parent: 1,
       },
     },
   ]);
@@ -206,28 +353,16 @@ const updateComment = asyncHandler(async (req, res) => {
         createdAt: 1,
         updatedAt: 1,
         owner: 1,
+        replyCount: 1,
+        parent: 1,
       },
     },
   ]);
 
-  // const updatedComment = await Comment.findByIdAndUpdate(
-  //     commentId,
-  //     {
-  //         content
-  //     },
-  //     {
-  //         new: true
-  //     }
-  // );
-
-  // if (!updatedComment) {
-  //     throw new ApiError(409, "Invalid comment id OR comment not exists");
-  // }
-
   return res
     .status(200)
     .json(
-      new ApiResponse(200, populatedComment, "Comment updated successfully")
+      new ApiResponse(200, populatedComment[0], "Comment updated successfully")
     );
 });
 
@@ -238,15 +373,36 @@ const deleteComment = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Comment id required");
   }
 
-  const deletedComment = await Comment.findByIdAndDelete(commentId);
+  const comment = await Comment.findById(commentId);
 
-  if (!deletedComment) {
+  if (!comment) {
     throw new ApiError(409, "Invalid comment id");
   }
+
+  if (comment.owner.toString() !== req.user?._id.toString()) {
+    throw new ApiError(403, "Unauthorized request");
+  }
+
+  // If this is a reply, update the parent comment's replyCount
+  if (comment.parent) {
+    await Comment.findByIdAndUpdate(comment.parent, {
+      $inc: { replyCount: -1 },
+      $pull: { replies: comment._id },
+    });
+  }
+
+  // Delete the comment
+  await Comment.findByIdAndDelete(commentId);
 
   return res
     .status(200)
     .json(new ApiResponse(200, {}, "Comment deleted successfully"));
 });
 
-export { getVideoComments, addComment, updateComment, deleteComment };
+export {
+  getVideoComments,
+  getCommentReplies,
+  addComment,
+  updateComment,
+  deleteComment,
+};
