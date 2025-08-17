@@ -5,10 +5,13 @@ import SaveIcon from "../../../component/iconComponents/SaveIcon";
 
 const ActionsBar = ({
   likeCount,
-  boostCount,
   isLiked,
   isLiking,
   onLikeToggle,
+  onDislikeToggle,
+  isDisliked,
+  isDisliking,
+  dislikeCount,
 }) => {
   return (
     <div className="mt-4 w-full">
@@ -30,11 +33,17 @@ const ActionsBar = ({
             </span>
             <span className="text-sm font-medium">{likeCount}</span>
           </button>
-          <button className="flex items-center gap-x-2 px-4 py-1.5 hover:bg-gray-100 dark:hover:bg-white/10 transition-all">
+          <button
+            onClick={onDislikeToggle}
+            disabled={isDisliking}
+            className={`flex items-center gap-x-2 px-4 py-1.5 hover:bg-gray-100 dark:hover:bg-white/10 transition-all ${
+              isDisliked ? "bg-red-50 dark:bg-red-900/20" : ""
+            } ${isDisliking ? "opacity-50 cursor-not-allowed" : ""}`}
+          >
             <span className="inline-block w-5">
-              <BoostIcon />
+              <BoostIcon filled={isDisliked} />
             </span>
-            <span className="text-sm font-medium">{boostCount}</span>
+            <span className="text-sm font-medium">{dislikeCount}</span>
           </button>
         </div>
 

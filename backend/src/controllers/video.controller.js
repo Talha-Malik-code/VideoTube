@@ -317,6 +317,25 @@ const getVideoById = asyncHandler(async (req, res) => {
       },
     },
     {
+      $lookup: {
+        from: "dislikes",
+        localField: "_id",
+        foreignField: "video",
+        as: "videoDislikes",
+      },
+    },
+    {
+      $addFields: {
+        totalDislikes: { $size: "$videoDislikes" },
+        isDisliked: {
+          $in: [
+            new mongoose.Types.ObjectId(req.user?._id),
+            "$videoDislikes.dislikedBy",
+          ],
+        },
+      },
+    },
+    {
       $addFields: {
         owner: {
           $first: "$owner",

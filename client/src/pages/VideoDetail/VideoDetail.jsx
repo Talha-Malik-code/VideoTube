@@ -21,6 +21,10 @@ import {
   toggleLike,
   selectSubscriberCount,
   selectLikeCount,
+  toggleDislike,
+  selectIsDisliked,
+  selectDislikeCount,
+  selectIsDisliking,
 } from "../../app/features/videoSlice";
 import VideoNotFound from "./VideoNotFound";
 import { selectIsLoggedIn } from "../../app/features/userSlice";
@@ -65,10 +69,13 @@ const VideoDetail = () => {
   const videoData = useSelector(selectCurrentVideo);
   const isSubscribed = useSelector(selectIsSubscribed);
   const isLiked = useSelector(selectIsLiked);
+  const isDisliked = useSelector(selectIsDisliked);
+  const dislikeCount = useSelector(selectDislikeCount);
   const subscriberCount = useSelector(selectSubscriberCount);
   const likeCount = useSelector(selectLikeCount);
   const isSubscribing = useSelector(selectIsSubscribing);
   const isLiking = useSelector(selectIsLiking);
+  const isDisliking = useSelector(selectIsDisliking);
   const loading = useSelector(selectIsLoading);
   const isLoggedIn = useSelector(selectIsLoggedIn);
 
@@ -78,6 +85,9 @@ const VideoDetail = () => {
     likeCount,
     isSubscribed,
     subscriberCount,
+    isDisliked,
+    dislikeCount,
+    isDisliking,
   });
 
   const handleSubscriptionToggle = async () => {
@@ -93,6 +103,20 @@ const VideoDetail = () => {
       dispatch(openDialog());
     } else {
       await dispatch(toggleLike(id));
+      if (isDisliked) {
+        await dispatch(toggleDislike(id));
+      }
+    }
+  };
+
+  const handleDislikeToggle = async () => {
+    if (!isLoggedIn) {
+      dispatch(openDialog());
+    } else {
+      await dispatch(toggleDislike(id));
+      if (isLiked) {
+        await dispatch(toggleLike(id));
+      }
     }
   };
 
@@ -131,10 +155,13 @@ const VideoDetail = () => {
           />
           <ActionsBar
             likeCount={likeCount}
-            boostCount={20}
             isLiked={isLiked}
             isLiking={isLiking}
             onLikeToggle={handleLikeToggle}
+            onDislikeToggle={handleDislikeToggle}
+            isDisliked={isDisliked}
+            isDisliking={isDisliking}
+            dislikeCount={dislikeCount}
           />
           <ChannelBar
             channel={videoData.owner}
