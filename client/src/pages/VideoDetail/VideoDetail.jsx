@@ -5,6 +5,7 @@ import VideoHeaderMeta from "./components/VideoHeaderMeta";
 import ActionsBar from "./components/ActionsBar";
 import ChannelBar from "./components/ChannelBar";
 import DescriptionCollapse from "./components/DescriptionCollapse";
+import CommentSection from "./components/CommentSection";
 import RecommendedList from "./components/RecommendedList";
 import VideoDetailSkeleton from "../../component/skeletons/VideoDetailSkeleton";
 import { useDispatch, useSelector } from "react-redux";
@@ -173,6 +174,9 @@ const VideoDetail = () => {
           <hr className="my-4 border-gray-200 dark:border-white" />
           <DescriptionCollapse description={videoData.description} />
         </div>
+
+        {/* Comment Section */}
+        <CommentSection videoId={id} />
       </div>
       <div className="col-span-12 flex w-full shrink-0 flex-col gap-3 lg:w-[350px] xl:w-[400px]">
         <RecommendedList />
