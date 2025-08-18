@@ -6,6 +6,10 @@ import {
   selectReplies,
   selectReplyPagination,
   selectIsGettingReplies,
+  updateComment,
+  deleteComment,
+  selectIsUpdatingComment,
+  selectIsDeletingComment,
 } from "../../../app/features/commentSlice";
 import {
   toggleCommentLike,
@@ -59,8 +63,16 @@ const CommentItem = ({
     selectIsGettingReplies(state, comment._id)
   );
 
+  // Get loading states
+  const isUpdating = useSelector(selectIsUpdatingComment);
+  const isDeleting = useSelector((state) =>
+    selectIsDeletingComment(state, comment._id)
+  );
+
   const [showReplies, setShowReplies] = useState(false);
   const [localReplyContent, setLocalReplyContent] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(comment.content);
 
   // Initialize like/dislike state for this comment
   useEffect(() => {
@@ -82,6 +94,11 @@ const CommentItem = ({
       );
     }
   }, [comment, dispatch]);
+
+  // Update edit content when comment changes
+  useEffect(() => {
+    setEditContent(comment.content);
+  }, [comment.content]);
 
   useEffect(() => {
     // Load replies when showReplies is true
@@ -181,6 +198,56 @@ const CommentItem = ({
     }
   };
 
+  const handleEditClick = () => {
+    setIsEditing(true);
+    setEditContent(comment.content);
+  };
+
+  const handleEditCancel = () => {
+    setIsEditing(false);
+    setEditContent(comment.content);
+  };
+
+  const handleEditSave = async () => {
+    if (!editContent.trim() || editContent === comment.content) {
+      setIsEditing(false);
+      return;
+    }
+
+    try {
+      await dispatch(
+        updateComment({ commentId: comment._id, content: editContent.trim() })
+      );
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Failed to update comment:", error);
+    }
+  };
+
+  const handleEditKeyPress = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleEditSave();
+    }
+    if (e.key === "Escape") {
+      handleEditCancel();
+    }
+  };
+
+  const handleDelete = async () => {
+    if (
+      window.confirm(
+        "Are you sure you want to delete this comment? This will also delete all replies."
+      )
+    ) {
+      try {
+        await dispatch(deleteComment(comment._id));
+      } catch (error) {
+        console.error("Failed to delete comment:", error);
+      }
+    }
+  };
+
   const canEdit = userData?._id === comment.owner._id;
   const canDelete = userData?._id === comment.owner._id;
   const isReplyInputOpen = openReplyId === comment._id;
@@ -225,16 +292,52 @@ const CommentItem = ({
             </span>
           </div>
 
-          <p className="text-gray-900 dark:text-white text-sm mb-2">
-            {comment.content}
-          </p>
+          {/* Comment Content or Edit Input */}
+          {isEditing ? (
+            <div className="mb-2">
+              <input
+                type="text"
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                onKeyPress={handleEditKeyPress}
+                className="w-full rounded-lg border border-gray-300 dark:border-white/20 bg-transparent px-3 py-2 text-gray-900 dark:text-white outline-none focus:border-[#ae7aff] text-sm"
+                disabled={isUpdating}
+              />
+              <div className="mt-2 flex gap-x-2">
+                <button
+                  onClick={handleEditSave}
+                  disabled={
+                    !editContent.trim() ||
+                    editContent === comment.content ||
+                    isUpdating
+                  }
+                  className="rounded-lg bg-[#ae7aff] px-3 py-1 text-xs font-medium text-black hover:bg-[#9d6aee] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isUpdating ? "Saving..." : "Save"}
+                </button>
+                <button
+                  onClick={handleEditCancel}
+                  disabled={isUpdating}
+                  className="rounded-lg border border-gray-300 dark:border-white/20 px-3 py-1 text-xs text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-gray-900 dark:text-white text-sm mb-2">
+              {comment.content}
+            </p>
+          )}
 
           {/* Comment Actions */}
           <div className="flex items-center gap-x-4 text-xs">
             <button
               onClick={handleLikeToggle}
               className={`flex items-center gap-x-1 hover:text-[#ae7aff] transition-colors ${
-                isLiked ? "text-[#ae7aff]" : "text-gray-500 dark:text-gray-400"
+                isLiked
+                  ? "text-[#5936D9] dark:text-[#ae7aff]"
+                  : "text-gray-500 dark:text-gray-400"
               }`}
             >
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -247,7 +350,7 @@ const CommentItem = ({
               onClick={handleDislikeToggle}
               className={`flex items-center gap-x-1 hover:text-[#ae7aff] transition-colors ${
                 isDisliked
-                  ? "text-[#ae7aff]"
+                  ? "text-[#5936D9] dark:text-[#ae7aff]"
                   : "text-gray-500 dark:text-gray-400"
               }`}
             >
@@ -264,15 +367,22 @@ const CommentItem = ({
               Reply
             </button>
 
-            {canEdit && (
-              <button className="text-gray-500 dark:text-gray-400 hover:text-[#ae7aff] transition-colors">
+            {canEdit && !isEditing && (
+              <button
+                onClick={handleEditClick}
+                className="text-gray-500 dark:text-gray-400 hover:text-[#ae7aff] transition-colors"
+              >
                 Edit
               </button>
             )}
 
             {canDelete && (
-              <button className="text-gray-500 dark:text-gray-400 hover:text-red-500 transition-colors">
-                Delete
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="text-gray-500 dark:text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50"
+              >
+                {isDeleting ? "Deleting..." : "Delete"}
               </button>
             )}
           </div>

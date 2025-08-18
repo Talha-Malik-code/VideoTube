@@ -60,7 +60,7 @@ const RecommendedList = () => {
     <div className="flex w-full flex-col gap-3">
       {items.map((item) => (
         <div
-          className="w-full gap-x-2 border border-gray-200 pr-2 md:flex dark:border-white/40 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition-colors rounded-md"
+          className="w-full gap-x-2 border border-gray-200 bg-white pr-2 md:flex dark:border-white/40 dark:bg-transparent cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition-colors rounded-md"
           key={item.id}
           onClick={() => handleVideoClick(item.id, item.title)}
           role="button"

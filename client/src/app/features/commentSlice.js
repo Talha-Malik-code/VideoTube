@@ -16,7 +16,7 @@ const initialState = {
   isLoading: false,
   isAdding: false,
   isUpdating: false,
-  isDeleting: false,
+  isDeleting: {},
   isGettingReplies: {},
   error: null,
 };
@@ -130,6 +130,9 @@ const commentSlice = createSlice({
       state.pagination = initialState.pagination;
       state.replyPagination = {};
       state.isGettingReplies = {};
+      state.isDeleting = {};
+      state.isUpdating = false;
+      state.isAdding = false;
     },
     setCommentPage: (state, action) => {
       state.pagination.page = action.payload;
@@ -147,10 +150,12 @@ const commentSlice = createSlice({
         delete state.replies[commentId];
         delete state.replyPagination[commentId];
         delete state.isGettingReplies[commentId];
+        delete state.isDeleting[commentId];
       } else {
         state.replies = {};
         state.replyPagination = {};
         state.isGettingReplies = {};
+        state.isDeleting = {};
       }
     },
     initializeCommentLikeState: () => {
@@ -181,7 +186,19 @@ const commentSlice = createSlice({
           if (!state.replies[parentId]) {
             state.replies[parentId] = [];
           }
-          state.replies[parentId] = responseData?.docs || responseData || [];
+
+          // If this is a pagination request (page > 1), append to existing replies
+          const existingReplies = state.replies[parentId];
+          const newReplies = responseData?.docs || responseData || [];
+
+          if (responseData?.page > 1) {
+            // Append new replies to existing ones
+            state.replies[parentId] = [...existingReplies, ...newReplies];
+          } else {
+            // Replace existing replies
+            state.replies[parentId] = newReplies;
+          }
+
           state.isGettingReplies[parentId] = false;
 
           if (!state.replyPagination[parentId]) {
@@ -195,6 +212,15 @@ const commentSlice = createSlice({
             hasNextPage: responseData?.hasNextPage || false,
             hasPrevPage: responseData?.hasPrevPage || false,
           };
+
+          // Update the parent comment's reply count in top-level comments
+          const parentComment = state.comments.find(
+            (comment) => comment._id === parentId
+          );
+          if (parentComment) {
+            parentComment.replyCount =
+              responseData?.totalDocs || state.replies[parentId].length;
+          }
         } else {
           // This is for top-level comments
           state.comments = responseData?.docs || responseData || [];
@@ -231,7 +257,19 @@ const commentSlice = createSlice({
         if (!state.replies[commentId]) {
           state.replies[commentId] = [];
         }
-        state.replies[commentId] = responseData?.docs || responseData || [];
+
+        // If this is a pagination request (page > 1), append to existing replies
+        const existingReplies = state.replies[commentId];
+        const newReplies = responseData?.docs || responseData || [];
+
+        if (responseData?.page > 1) {
+          // Append new replies to existing ones
+          state.replies[commentId] = [...existingReplies, ...newReplies];
+        } else {
+          // Replace existing replies
+          state.replies[commentId] = newReplies;
+        }
+
         state.isGettingReplies[commentId] = false;
 
         if (!state.replyPagination[commentId]) {
@@ -245,6 +283,15 @@ const commentSlice = createSlice({
           hasNextPage: responseData?.hasNextPage || false,
           hasPrevPage: responseData?.hasPrevPage || false,
         };
+
+        // Update the parent comment's reply count in top-level comments
+        const parentComment = state.comments.find(
+          (comment) => comment._id === commentId
+        );
+        if (parentComment) {
+          parentComment.replyCount =
+            responseData?.totalDocs || state.replies[commentId].length;
+        }
       })
       .addCase(getCommentReplies.rejected, (state, action) => {
         const { commentId } = action.meta.arg;
@@ -273,6 +320,14 @@ const commentSlice = createSlice({
               state.replyPagination[parentId] = { ...initialState.pagination };
             }
             state.replyPagination[parentId].totalDocs += 1;
+
+            // Update the parent comment's reply count in top-level comments
+            const parentComment = state.comments.find(
+              (comment) => comment._id === parentId
+            );
+            if (parentComment) {
+              parentComment.replyCount = (parentComment.replyCount || 0) + 1;
+            }
           } else {
             // This is a top-level comment
             state.comments.unshift(commentData);
@@ -299,7 +354,10 @@ const commentSlice = createSlice({
             (comment) => comment._id === commentData._id
           );
           if (topLevelIndex !== -1) {
-            state.comments[topLevelIndex] = commentData;
+            state.comments[topLevelIndex] = {
+              ...state.comments[topLevelIndex],
+              ...commentData,
+            };
           }
 
           // Update in replies
@@ -308,7 +366,10 @@ const commentSlice = createSlice({
               (reply) => reply._id === commentData._id
             );
             if (replyIndex !== -1) {
-              state.replies[commentId][replyIndex] = commentData;
+              state.replies[commentId][replyIndex] = {
+                ...state.replies[commentId][replyIndex],
+                ...commentData,
+              };
             }
           });
         }
@@ -318,38 +379,110 @@ const commentSlice = createSlice({
         state.error = action.payload;
       })
       // Delete comment
-      .addCase(deleteComment.pending, (state) => {
-        state.isDeleting = true;
+      .addCase(deleteComment.pending, (state, action) => {
+        state.isDeleting[action.meta.arg] = true;
         state.error = null;
       })
       .addCase(deleteComment.fulfilled, (state, action) => {
-        state.isDeleting = false;
         const commentId = action.payload;
+        // Clear the deletion state for this comment
+        delete state.isDeleting[commentId];
 
         // Remove from top-level comments
-        state.comments = state.comments.filter(
-          (comment) => comment._id !== commentId
+        const deletedComment = state.comments.find(
+          (comment) => comment._id === commentId
         );
-        state.pagination.totalDocs = Math.max(
-          0,
-          state.pagination.totalDocs - 1
-        );
-
-        // Remove from replies
-        Object.keys(state.replies).forEach((parentId) => {
-          state.replies[parentId] = state.replies[parentId].filter(
-            (reply) => reply._id !== commentId
+        if (deletedComment) {
+          state.comments = state.comments.filter(
+            (comment) => comment._id !== commentId
           );
-          if (state.replyPagination[parentId]) {
-            state.replyPagination[parentId].totalDocs = Math.max(
-              0,
-              state.replyPagination[parentId].totalDocs - 1
+          state.pagination.totalDocs = Math.max(
+            0,
+            state.pagination.totalDocs - 1
+          );
+        }
+
+        // Remove from replies and handle cascading deletes
+        Object.keys(state.replies).forEach((parentId) => {
+          // Check if this parent comment was deleted
+          if (parentId === commentId) {
+            // Delete all replies under this comment
+            const replyCount = state.replies[parentId]?.length || 0;
+            delete state.replies[parentId];
+            delete state.replyPagination[parentId];
+            delete state.isGettingReplies[parentId];
+
+            // Update parent comment's reply count if it exists in top-level comments
+            const parentComment = state.comments.find(
+              (comment) => comment._id === parentId
             );
+            if (parentComment) {
+              parentComment.replyCount = Math.max(
+                0,
+                parentComment.replyCount - replyCount
+              );
+            }
+          } else {
+            // Remove this specific reply from the parent's replies
+            const replyIndex = state.replies[parentId].findIndex(
+              (reply) => reply._id === commentId
+            );
+            if (replyIndex !== -1) {
+              state.replies[parentId].splice(replyIndex, 1);
+
+              // Update the parent comment's reply count
+              if (state.replyPagination[parentId]) {
+                state.replyPagination[parentId].totalDocs = Math.max(
+                  0,
+                  state.replyPagination[parentId].totalDocs - 1
+                );
+              }
+
+              // Also update the replyCount in the parent comment if it exists in top-level comments
+              const parentComment = state.comments.find(
+                (comment) => comment._id === parentId
+              );
+              if (parentComment) {
+                parentComment.replyCount = Math.max(
+                  0,
+                  parentComment.replyCount - 1
+                );
+              }
+            }
+          }
+        });
+
+        // Also check if the deleted comment was a reply to any other comment
+        // and remove it from that comment's replies array
+        Object.keys(state.replies).forEach((parentId) => {
+          const replyIndex = state.replies[parentId].findIndex(
+            (reply) => reply._id === commentId
+          );
+          if (replyIndex !== -1) {
+            state.replies[parentId].splice(replyIndex, 1);
+            if (state.replyPagination[parentId]) {
+              state.replyPagination[parentId].totalDocs = Math.max(
+                0,
+                state.replyPagination[parentId].totalDocs - 1
+              );
+            }
+
+            // Update the parent comment's reply count
+            const parentComment = state.comments.find(
+              (comment) => comment._id === parentId
+            );
+            if (parentComment) {
+              parentComment.replyCount = Math.max(
+                0,
+                parentComment.replyCount - 1
+              );
+            }
           }
         });
       })
       .addCase(deleteComment.rejected, (state, action) => {
-        state.isDeleting = false;
+        const commentId = action.meta.arg;
+        state.isDeleting[commentId] = false;
         state.error = action.payload;
       });
   },
@@ -373,7 +506,8 @@ export const selectReplyPagination = (state, commentId) =>
 export const selectIsCommentLoading = (state) => state.comment.isLoading;
 export const selectIsAddingComment = (state) => state.comment.isAdding;
 export const selectIsUpdatingComment = (state) => state.comment.isUpdating;
-export const selectIsDeletingComment = (state) => state.comment.isDeleting;
+export const selectIsDeletingComment = (state, commentId) =>
+  state.comment.isDeleting[commentId] || false;
 export const selectIsGettingReplies = (state, commentId) =>
   state.comment.isGettingReplies[commentId] || false;
 export const selectCommentError = (state) => state.comment.error;

@@ -40,7 +40,11 @@ const ActionsBar = ({
               isDisliked ? "bg-red-50 dark:bg-red-900/20" : ""
             } ${isDisliking ? "opacity-50 cursor-not-allowed" : ""}`}
           >
-            <span className="inline-block w-5">
+            <span
+              className={`inline-block w-5 ${
+                isDisliked ? "text-[#5936D9] dark:text-[#ae7aff]" : ""
+              }`}
+            >
               <BoostIcon filled={isDisliked} />
             </span>
             <span className="text-sm font-medium">{dislikeCount}</span>

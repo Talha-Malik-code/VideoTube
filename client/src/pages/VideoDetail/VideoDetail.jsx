@@ -175,7 +175,7 @@ const VideoDetail = () => {
       <div className="col-span-12 w-full">
         <VideoPlayer src={videoData.videoFile} />
         <div
-          className="group mb-4 w-full rounded-lg border border-gray-200 p-4 duration-200 hover:bg-gray-100/50 focus:bg-gray-100/50 dark:border-white/40 dark:hover:bg-white/5 dark:focus:bg-white/5"
+          className="group mb-4 w-full rounded-lg border border-gray-200 bg-white p-4 duration-200 hover:bg-gray-100/50 focus:bg-gray-100/50 dark:border-white dark:bg-[#121212] dark:hover:bg-white/5 dark:focus:bg-white/5"
           role="button"
           tabIndex={0}
         >

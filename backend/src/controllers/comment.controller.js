@@ -383,20 +383,59 @@ const deleteComment = asyncHandler(async (req, res) => {
     throw new ApiError(403, "Unauthorized request");
   }
 
-  // If this is a reply, update the parent comment's replyCount
-  if (comment.parent) {
-    await Comment.findByIdAndUpdate(comment.parent, {
-      $inc: { replyCount: -1 },
-      $pull: { replies: comment._id },
-    });
+  // Start a session for transaction
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    // If this is a reply, update the parent comment's replyCount and remove from replies array
+    if (comment.parent) {
+      await Comment.findByIdAndUpdate(
+        comment.parent,
+        {
+          $inc: { replyCount: -1 },
+          $pull: { replies: comment._id },
+        },
+        { session }
+      );
+    }
+
+    // Recursively delete all nested replies
+    const deleteRepliesRecursively = async (parentCommentId) => {
+      // Find all replies to this comment
+      const replies = await Comment.find({ parent: parentCommentId }).session(
+        session
+      );
+
+      // Recursively delete each reply and its nested replies
+      for (const reply of replies) {
+        await deleteRepliesRecursively(reply._id);
+        await Comment.findByIdAndDelete(reply._id, { session });
+      }
+    };
+
+    // Delete all nested replies first
+    await deleteRepliesRecursively(commentId);
+
+    // Finally delete the main comment
+    await Comment.findByIdAndDelete(commentId, { session });
+
+    // Commit the transaction
+    await session.commitTransaction();
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, {}, "Comment and all replies deleted successfully")
+      );
+  } catch (error) {
+    // If anything fails, abort the transaction
+    await session.abortTransaction();
+    throw error;
+  } finally {
+    // End the session
+    session.endSession();
   }
-
-  // Delete the comment
-  await Comment.findByIdAndDelete(commentId);
-
-  return res
-    .status(200)
-    .json(new ApiResponse(200, {}, "Comment deleted successfully"));
 });
 
 export {

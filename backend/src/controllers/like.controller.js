@@ -61,15 +61,19 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
     });
   }
 
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(
-        200,
-        likeExists ? {} : newLike,
-        `Comment ${likeExists ? "Unliked" : "Liked"} successfully`
-      )
-    );
+  const likeCount = await Like.countDocuments({ comment: commentId });
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        likedBy: likeExists ? {} : newLike,
+        isLiked: !likeExists,
+        likeCount: likeCount,
+      },
+      `Comment ${likeExists ? "Unliked" : "Liked"} successfully`
+    )
+  );
 });
 
 const toggleTweetLike = asyncHandler(async (req, res) => {
@@ -93,15 +97,19 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
     });
   }
 
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(
-        200,
-        likeExists ? {} : newLike,
-        `Tweet ${likeExists ? "Unliked" : "Liked"} successfully`
-      )
-    );
+  const likeCount = await Like.countDocuments({ tweet: tweetId });
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        likedBy: likeExists ? {} : newLike,
+        isLiked: !likeExists,
+        likeCount: likeCount,
+      },
+      `Tweet ${likeExists ? "Unliked" : "Liked"} successfully`
+    )
+  );
 });
 
 const getLikedVideos = asyncHandler(async (req, res) => {
