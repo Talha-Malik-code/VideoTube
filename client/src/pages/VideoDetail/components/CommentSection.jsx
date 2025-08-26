@@ -127,8 +127,8 @@ const CommentSection = ({ videoId }) => {
                       <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
                       <g
                         id="SVGRepo_tracerCarrier"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
                       ></g>
                       <g id="SVGRepo_iconCarrier">
                         <path d="M17.5,16.383a8.067,8.067,0,1,1,8.067-8.067A8.076,8.076,0,0,1,17.5,16.383Zm0-13.633a5.567,5.567,0,1,0,5.567,5.566A5.573,5.573,0,0,0,17.5,2.75Z"></path>

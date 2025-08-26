@@ -184,6 +184,7 @@ const CommentItem = ({
     onAddReply(comment._id, localReplyContent);
     setLocalReplyContent("");
     setOpenReplyId(null);
+    if (!showReplies) setShowReplies(true);
   };
 
   const handleCancelReply = () => {

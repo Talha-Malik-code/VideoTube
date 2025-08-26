@@ -29,7 +29,9 @@ const ActionsBar = ({
                 isLiked ? "text-[#5936D9] dark:text-[#ae7aff]" : ""
               }`}
             >
-              <LikeIcon filled={isLiked} />
+              <LikeIcon
+              // filled={isLiked}
+              />
             </span>
             <span className="text-sm font-medium">{likeCount}</span>
           </button>
@@ -45,7 +47,9 @@ const ActionsBar = ({
                 isDisliked ? "text-[#5936D9] dark:text-[#ae7aff]" : ""
               }`}
             >
-              <BoostIcon filled={isDisliked} />
+              <BoostIcon
+              // filled={isDisliked}
+              />
             </span>
             <span className="text-sm font-medium">{dislikeCount}</span>
           </button>

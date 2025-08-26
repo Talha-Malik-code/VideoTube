@@ -188,8 +188,8 @@ const videoSlice = createSlice({
         state.isLoading = false;
         state.videoDetails = action.payload;
         state.currentVideo = action.payload;
-        state.subscriberCount = action.payload.owner.subscribersCount;
-        state.isSubscribed = action.payload.owner.isSubscribed;
+        state.subscriberCount = action.payload?.owner?.subscribersCount;
+        state.isSubscribed = action.payload?.owner?.isSubscribed;
       })
       .addCase(getVideoById.rejected, (state, action) => {
         state.isLoading = false;

@@ -1,4 +1,8 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import {
+  createAsyncThunk,
+  createSelector,
+  createSlice,
+} from "@reduxjs/toolkit";
 import { fetchData, updateData } from "../../utils";
 
 const initialState = {
@@ -498,11 +502,15 @@ export const {
 
 // Memoized selectors with stable references
 export const selectComments = (state) => state.comment.comments;
-export const selectReplies = (state, commentId) =>
-  state.comment.replies[commentId] || [];
+export const selectReplies = createSelector(
+  (state, commentId) => state.comment.replies[commentId],
+  (replies) => replies || []
+);
 export const selectCommentPagination = (state) => state.comment.pagination;
-export const selectReplyPagination = (state, commentId) =>
-  state.comment.replyPagination[commentId] || { ...initialState.pagination };
+export const selectReplyPagination = createSelector(
+  (state, commentId) => state.comment.replyPagination[commentId],
+  (replyPagination) => replyPagination || { ...initialState.pagination }
+);
 export const selectIsCommentLoading = (state) => state.comment.isLoading;
 export const selectIsAddingComment = (state) => state.comment.isAdding;
 export const selectIsUpdatingComment = (state) => state.comment.isUpdating;
