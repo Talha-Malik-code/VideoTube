@@ -200,14 +200,9 @@ const CommentSection = ({ videoId }) => {
             comments.map((comment) => (
               <CommentItem
                 key={comment._id}
-                comment={comment}
+                commentId={comment._id}
                 videoId={videoId}
-                onReply={() => {}} // Not used anymore
-                isReplying={false} // Not used anymore
-                replyContent="" // Not used anymore
-                setReplyContent={() => {}} // Not used anymore
                 onAddReply={handleAddReply}
-                onReplyKeyPress={() => {}} // Not used anymore
                 onCancelReply={() => {}} // Not used anymore
                 openReplyId={openReplyId}
                 setOpenReplyId={setOpenReplyId}

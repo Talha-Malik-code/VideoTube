@@ -10,6 +10,7 @@ import {
   deleteComment,
   selectIsUpdatingComment,
   selectIsDeletingComment,
+  selectCommentOrReplyById,
 } from "../../../app/features/commentSlice";
 import {
   toggleCommentLike,
@@ -29,50 +30,56 @@ import { openDialog } from "../../../app/features/dialogToggleSlice";
 import { formatDistanceToNow } from "date-fns";
 
 const CommentItem = ({
-  comment,
+  commentId,
   videoId,
-  onReply,
-  isReplying,
-  replyContent,
-  setReplyContent,
   onAddReply,
-  onReplyKeyPress,
-  onCancelReply,
   openReplyId,
   setOpenReplyId,
 }) => {
+  // --- ALL HOOKS MUST BE CALLED AT THE TOP LEVEL ---
   const dispatch = useDispatch();
   const { id } = useParams();
   const isLoggedIn = useSelector(selectIsLoggedIn);
   const userData = useSelector(selectUserData);
 
-  // Get like/dislike state for this comment
-  const { isLiked, likeCount } = useSelector((state) =>
-    selectCommentLikeState(state, comment._id)
-  );
-  const { isDisliked, dislikeCount } = useSelector((state) =>
-    selectCommentDislikeState(state, comment._id)
+  const comment = useSelector((state) =>
+    selectCommentOrReplyById(state, commentId)
   );
 
   // Get replies for this comment
-  const replies = useSelector((state) => selectReplies(state, comment._id));
-  const replyPagination = useSelector((state) =>
-    selectReplyPagination(state, comment._id)
+  const replies = useSelector((state) => selectReplies(state, commentId)); // Use commentId directly here
+  const replyPagination = useSelector(
+    (state) => selectReplyPagination(state, commentId) // Use commentId directly here
   );
-  const isGettingReplies = useSelector((state) =>
-    selectIsGettingReplies(state, comment._id)
+  const isGettingReplies = useSelector(
+    (state) => selectIsGettingReplies(state, commentId) // Use commentId directly here
   );
 
   // Get loading states
   const isUpdating = useSelector(selectIsUpdatingComment);
-  const isDeleting = useSelector((state) =>
-    selectIsDeletingComment(state, comment._id)
+  const isDeleting = useSelector(
+    (state) => selectIsDeletingComment(state, commentId) // Use commentId directly here
+  );
+
+  // Get like/dislike state
+  const { isLiked, likeCount } = useSelector(
+    (state) => selectCommentLikeState(state, commentId) // Use commentId directly here
+  );
+  const { isDisliked, dislikeCount } = useSelector(
+    (state) => selectCommentDislikeState(state, commentId) // Use commentId directly here
   );
 
   const [showReplies, setShowReplies] = useState(false);
   const [localReplyContent, setLocalReplyContent] = useState("");
   const [isEditing, setIsEditing] = useState(false);
-  const [editContent, setEditContent] = useState(comment.content);
+  const [editContent, setEditContent] = useState(""); // Initialize with empty string to avoid "undefined" error if comment is null
+  // State for the custom delete modal
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  // --- All conditional logic and early returns come AFTER the hooks ---
+  if (!comment) {
+    return null;
+  }
 
   // Initialize like/dislike state for this comment
   useEffect(() => {
@@ -95,13 +102,15 @@ const CommentItem = ({
     }
   }, [comment, dispatch]);
 
-  // Update edit content when comment changes
+  // Update edit content when comment content changes in the store, but NOT while editing
   useEffect(() => {
-    setEditContent(comment.content);
-  }, [comment.content]);
+    if (!isEditing) {
+      setEditContent(comment.content);
+    }
+  }, [comment.content, isEditing]);
 
   useEffect(() => {
-    // Load replies when showReplies is true
+    // Load replies when showReplies is true and they haven't been loaded yet
     if (showReplies && comment.replyCount > 0 && replies.length === 0) {
       dispatch(
         getVideoComments({
@@ -126,7 +135,6 @@ const CommentItem = ({
       dispatch(openDialog());
       return;
     }
-
     await dispatch(toggleCommentLike(comment._id));
     if (isDisliked) {
       await dispatch(toggleCommentDislike(comment._id));
@@ -138,7 +146,6 @@ const CommentItem = ({
       dispatch(openDialog());
       return;
     }
-
     await dispatch(toggleCommentDislike(comment._id));
     if (isLiked) {
       await dispatch(toggleCommentLike(comment._id));
@@ -150,8 +157,7 @@ const CommentItem = ({
       dispatch(openDialog());
       return;
     }
-
-    // Close any other open reply inputs
+    // Toggle the reply input for this comment
     if (openReplyId !== comment._id) {
       setOpenReplyId(comment._id);
       setLocalReplyContent("");
@@ -180,7 +186,6 @@ const CommentItem = ({
 
   const handleAddReply = () => {
     if (!localReplyContent.trim()) return;
-
     onAddReply(comment._id, localReplyContent);
     setLocalReplyContent("");
     setOpenReplyId(null);
@@ -214,7 +219,6 @@ const CommentItem = ({
       setIsEditing(false);
       return;
     }
-
     try {
       await dispatch(
         updateComment({ commentId: comment._id, content: editContent.trim() })
@@ -235,18 +239,22 @@ const CommentItem = ({
     }
   };
 
-  const handleDelete = async () => {
-    if (
-      window.confirm(
-        "Are you sure you want to delete this comment? This will also delete all replies."
-      )
-    ) {
-      try {
-        await dispatch(deleteComment(comment._id));
-      } catch (error) {
-        console.error("Failed to delete comment:", error);
-      }
+  const handleDelete = () => {
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    try {
+      await dispatch(deleteComment(comment._id));
+      setShowDeleteModal(false);
+    } catch (error) {
+      console.error("Failed to delete comment:", error);
+      setShowDeleteModal(false);
     }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
   };
 
   const canEdit = userData?._id === comment.owner._id;
@@ -255,6 +263,34 @@ const CommentItem = ({
 
   return (
     <div className="space-y-3">
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white dark:bg-[#121212] p-6 rounded-lg shadow-xl">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+              Confirm Deletion
+            </h3>
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+              Are you sure you want to delete this comment? This will also
+              delete all replies.
+            </p>
+            <div className="mt-4 flex justify-end space-x-2">
+              <button
+                onClick={handleCancelDelete}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md dark:text-gray-300 dark:bg-gray-700"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Comment */}
       <div className="flex gap-x-3">
         <div className="mt-2 h-10 w-10 shrink-0">
@@ -468,15 +504,9 @@ const CommentItem = ({
               {replies.map((reply) => (
                 <CommentItem
                   key={reply._id}
-                  comment={reply}
+                  commentId={reply._id}
                   videoId={videoId}
-                  onReply={onReply}
-                  isReplying={isReplying}
-                  replyContent={replyContent}
-                  setReplyContent={setReplyContent}
                   onAddReply={onAddReply}
-                  onReplyKeyPress={onReplyKeyPress}
-                  onCancelReply={onCancelReply}
                   openReplyId={openReplyId}
                   setOpenReplyId={setOpenReplyId}
                 />

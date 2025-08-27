@@ -519,5 +519,26 @@ export const selectIsDeletingComment = (state, commentId) =>
 export const selectIsGettingReplies = (state, commentId) =>
   state.comment.isGettingReplies[commentId] || false;
 export const selectCommentError = (state) => state.comment.error;
+export const selectCommentOrReplyById = createSelector(
+  (state) => state.comment.comments,
+  (state) => state.comment.replies,
+  (state, commentId) => commentId,
+  (comments, replies, commentId) => {
+    const topLevelComment = comments.find((c) => c._id === commentId);
+    if (topLevelComment) {
+      return topLevelComment;
+    }
+
+    let foundReply = null;
+    Object.keys(replies).forEach((parentId) => {
+      const reply = replies[parentId].find((r) => r._id === commentId);
+      if (reply) {
+        foundReply = reply;
+      }
+    });
+
+    return foundReply;
+  }
+);
 
 export default commentSlice.reducer;

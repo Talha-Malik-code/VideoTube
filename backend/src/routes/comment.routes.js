@@ -7,12 +7,16 @@ import {
   getCommentReplies,
   updateComment,
 } from "../controllers/comment.controller.js";
+import { addUserToRequest } from "../middlewares/addUserToRequest.js";
 
 const router = Router();
 
-router.route("/:videoId").get(getVideoComments).post(verifyJWT, addComment);
+router
+  .route("/:videoId")
+  .get(addUserToRequest, getVideoComments)
+  .post(verifyJWT, addComment);
 
-router.route("/replies/:commentId").get(getCommentReplies);
+router.route("/replies/:commentId").get(addUserToRequest, getCommentReplies);
 
 router
   .route("/c/:commentId")
