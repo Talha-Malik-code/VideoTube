@@ -108,7 +108,7 @@ const likeSlice = createSlice({
       })
       .addCase(toggleCommentLike.fulfilled, (state, action) => {
         state.isLiking = false;
-        console.log("toggleCommentLike.fulfilled", action.payload);
+        // console.log("toggleCommentLike.fulfilled", action.payload);
         const { commentId, data } = action.payload;
         state.commentLikes[commentId] = {
           isLiked: data.isLiked,

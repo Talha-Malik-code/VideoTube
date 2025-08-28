@@ -1,6 +1,9 @@
 import React from "react";
 
-const NoVideo = () => {
+const NoVideo = ({
+  title = "No videos available",
+  text = "There are no videos here available. Please try to search some thing else.",
+}) => {
   return (
     <div className="flex h-full items-center justify-center">
       <div className="w-full max-w-sm text-center">
@@ -23,11 +26,8 @@ const NoVideo = () => {
             </svg>
           </span>
         </p>
-        <h5 className="mb-2 font-semibold">No videos available</h5>
-        <p>
-          There are no videos here available. Please try to search some thing
-          else.
-        </p>
+        <h5 className="mb-2 font-semibold">{title}</h5>
+        <p>{text}</p>
       </div>
     </div>
   );

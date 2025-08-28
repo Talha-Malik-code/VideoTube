@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import AButton from "../AButton";
+import AButton from "../../AButton";
 
 const AuthDialogBox = ({ isOpen, onClose }) => {
   if (!isOpen) return null;

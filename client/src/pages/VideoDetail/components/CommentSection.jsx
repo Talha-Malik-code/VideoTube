@@ -33,7 +33,7 @@ const CommentSection = ({ videoId }) => {
 
   const handleAddComment = async () => {
     if (!isLoggedIn) {
-      dispatch(openDialog());
+      dispatch(openDialog("auth"));
       return;
     }
 
@@ -49,7 +49,7 @@ const CommentSection = ({ videoId }) => {
 
   const handleAddReply = async (parentId, content) => {
     if (!isLoggedIn) {
-      dispatch(openDialog());
+      dispatch(openDialog("auth"));
       return;
     }
 

@@ -2,6 +2,7 @@ import React from "react";
 import ChannelAvatar from "../../Home/videoComponents/ChannelAvatar";
 import AButton from "../../../component/AButton";
 import LoaderIcon from "../../../component/iconComponents/LoaderIcon";
+import { useNavigate } from "react-router-dom";
 
 const ChannelBar = ({
   channel,
@@ -10,9 +11,12 @@ const ChannelBar = ({
   isSubscribing,
   subscriberCount,
 }) => {
+  const navigate = useNavigate();
+  const goToChannel = () => navigate(`/channel/${channel.username}`);
+
   return (
     <div className="mt-4 flex items-center justify-between">
-      <div className="flex items-center gap-x-4">
+      <div onClick={goToChannel} className="flex items-center gap-x-4">
         <div className="mt-2 h-12 w-12 shrink-0">
           <ChannelAvatar
             src={channel.avatar}

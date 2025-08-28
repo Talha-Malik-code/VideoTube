@@ -5,6 +5,7 @@ import dialogToggleReducer from "../features/dialogToggleSlice";
 import commentReducer from "../features/commentSlice";
 import likeReducer from "../features/likeSlice";
 import dislikeReducer from "../features/dislikeSlice";
+import channelReducer from "../features/channelSlice";
 
 const store = configureStore({
   reducer: {
@@ -14,6 +15,7 @@ const store = configureStore({
     comment: commentReducer,
     like: likeReducer,
     dislike: dislikeReducer,
+    channel: channelReducer,
   },
 });
 

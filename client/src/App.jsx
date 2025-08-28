@@ -9,26 +9,18 @@ import Login from "./pages/Login/Login";
 import ProtectedRoute from "./component/ProtectedRoute";
 import Home from "./pages/Home/Home";
 import VideoDetail from "./pages/VideoDetail/VideoDetail";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { useEffect } from "react";
 import { checkAuthStatus } from "./app/features/userSlice";
-import AuthDialogBox from "./component/dialogBox/authDialogBox";
-import {
-  closeDialog,
-  selectIsDialogOpen,
-} from "./app/features/dialogToggleSlice";
+import Channel from "./pages/Channel/Channel";
+import OnPageDialogBoxes from "./component/dialogBox/OnPageDialogBoxes";
 
 function App() {
   const dispatch = useDispatch();
-  const isDialogOpen = useSelector(selectIsDialogOpen);
 
   useEffect(() => {
     dispatch(checkAuthStatus());
   }, [dispatch]);
-
-  function handleCloseDialog() {
-    dispatch(closeDialog());
-  }
 
   return (
     <BrowserRouter>
@@ -38,13 +30,14 @@ function App() {
             <Route index element={<Home />} />
           </Route> */}
           <Route index element={<Home />} />
+          <Route path="channel/:username" element={<Channel />} />
           <Route path="video/:id" element={<VideoDetail />} />
         </Route>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
       </Routes>
       <ToastContainer position="bottom-right" />
-      <AuthDialogBox isOpen={isDialogOpen} onClose={handleCloseDialog} />
+      <OnPageDialogBoxes />
     </BrowserRouter>
   );
 }

@@ -100,7 +100,7 @@ const VideoDetail = () => {
 
   const handleSubscriptionToggle = async () => {
     if (!isLoggedIn) {
-      dispatch(openDialog());
+      dispatch(openDialog("auth"));
     } else {
       await dispatch(toggleSubscription(videoData.owner._id));
     }
@@ -108,7 +108,7 @@ const VideoDetail = () => {
 
   const handleLikeToggle = async () => {
     if (!isLoggedIn) {
-      dispatch(openDialog());
+      dispatch(openDialog("auth"));
     } else {
       await dispatch(toggleVideoLike(id));
       if (isDisliked) {
@@ -119,7 +119,7 @@ const VideoDetail = () => {
 
   const handleDislikeToggle = async () => {
     if (!isLoggedIn) {
-      dispatch(openDialog());
+      dispatch(openDialog("auth"));
     } else {
       await dispatch(toggleVideoDislike(id));
       if (isLiked) {
@@ -193,6 +193,8 @@ const VideoDetail = () => {
             isDisliked={isDisliked}
             isDisliking={isDisliking}
             dislikeCount={dislikeCount}
+            videoURL={videoData.videoFile}
+            videoTitle={videoData.title}
           />
           <ChannelBar
             channel={videoData.owner}

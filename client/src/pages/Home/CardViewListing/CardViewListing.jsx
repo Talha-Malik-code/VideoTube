@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   getAllVideos,
   selectAllVideos,
+  selectError,
   selectIsLoading,
 } from "../../../app/features/videoSlice";
 import NoVideo from "../NoVideo";
@@ -13,6 +14,9 @@ const CardViewListing = () => {
   const dispatch = useDispatch();
   const loading = useSelector(selectIsLoading);
   const videos = useSelector(selectAllVideos);
+  const error = useSelector(selectError);
+
+  console.log("Error: ", error);
 
   useEffect(() => {
     let ignore = false;
@@ -33,7 +37,7 @@ const CardViewListing = () => {
     return <VideoCardSkeleton count={12} />;
   }
 
-  if (videos.docs.length === 0) {
+  if (videos && videos.docs.length === 0) {
     return <NoVideo />;
   }
 

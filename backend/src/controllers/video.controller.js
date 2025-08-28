@@ -128,12 +128,6 @@ const publishAVideo = asyncHandler(async (req, res) => {
     throw new ApiError(400, "All fields are required");
   }
 
-  const existedVideo = await Video.findOne({ title });
-
-  if (existedVideo) {
-    throw new ApiError(409, "Change the title. Title already used");
-  }
-
   if (!videoLocalPath) {
     throw new ApiError(400, "Video file is required");
   }

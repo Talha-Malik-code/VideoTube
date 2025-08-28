@@ -3,7 +3,7 @@ import React from "react";
 const VideoPlayer = ({ src }) => {
   let videoSrc = src;
   if (src.split(".").pop() === "ts") {
-    videoSrc = src.replace(".ts", ".webm");
+    videoSrc = src.replace(".ts", ".webm").replace("http", "https");
   }
 
   return (

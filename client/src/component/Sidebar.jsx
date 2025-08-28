@@ -1,5 +1,5 @@
 import React from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import HomeIcon from "./iconComponents/HomeIcon";
 import ThumbsUpIcon from "./iconComponents/ThumbsUpIcon";
 import HistoryIcon from "./iconComponents/HistoryIcon";
@@ -9,10 +9,33 @@ import SubscribersIcon from "./iconComponents/SubscribersIcon";
 import SupportIcon from "./iconComponents/SupportIcon";
 import GearIcon from "./iconComponents/GearIcon";
 import ThemeToggle from "./ThemeToggle";
+import { useDispatch, useSelector } from "react-redux";
+import { selectIsLoggedIn, selectUserData } from "../app/features/userSlice";
+import { openDialog } from "../app/features/dialogToggleSlice";
 
 const Sidebar = () => {
+  const dispatch = useDispatch();
+  const user = useSelector(selectUserData);
+  const isLoggedIn = useSelector(selectIsLoggedIn);
+
   const location = useLocation();
   const isVideoRoute = location.pathname.startsWith("/video/");
+  const isHomeRoute = location.pathname === "/";
+  const isUserChannelRoute = location.pathname === `/channel/${user?.username}`;
+
+  const navigate = useNavigate();
+
+  const goToUserChannel = () => navigate(`/channel/${user?.username}`);
+
+  const goToHome = () => navigate(`/`);
+
+  function handleCollectionClick() {
+    if (!isLoggedIn) {
+      dispatch(openDialog("auth"));
+    } else {
+      goToUserChannel();
+    }
+  }
 
   // ✅ Different positioning for video page vs other pages
   const positioningClass = isVideoRoute
@@ -39,7 +62,13 @@ const Sidebar = () => {
       >
         <ul className="flex justify-around gap-y-2 sm:sticky sm:top-[106px] sm:min-h-[calc(100vh-130px)] sm:flex-col">
           <li className="">
-            <button className="flex flex-col items-center justify-center py-1 focus:text-[#5936D9] dark:focus:text-[#ae7aff] sm:w-full sm:flex-row sm:border sm:border-gray-300 sm:p-1.5 sm:hover:bg-gray-100 sm:hover:text-black sm:focus:border-[#5936D9] sm:focus:bg-gray-100 sm:focus:text-black sm:group-hover:justify-start sm:group-hover:px-4 lg:justify-start lg:px-4 dark:sm:border-white dark:sm:hover:bg-[#ae7aff] dark:sm:hover:text-black dark:sm:focus:border-[#ae7aff] dark:sm:focus:bg-[#ae7aff] dark:sm:focus:text-black">
+            <button
+              onClick={goToHome}
+              className={`flex flex-col items-center justify-center py-1 sm:w-full sm:flex-row sm:border sm:border-gray-300 sm:p-1.5 sm:hover:bg-gray-100 sm:hover:text-black sm:group-hover:justify-start sm:group-hover:px-4 lg:justify-start lg:px-4 dark:sm:border-white dark:sm:hover:bg-[#ae7aff] dark:sm:hover:text-black ${
+                isHomeRoute &&
+                "text-[#5936D9] dark:text-[#ae7aff] sm:border-[#5936D9] sm:bg-gray-100 sm:text-black dark:sm:border-[#ae7aff] dark:sm:bg-[#ae7aff] dark:sm:text-black"
+              }`}
+            >
               <span className="inline-block w-5 shrink-0 sm:group-hover:mr-4 lg:mr-4">
                 <HomeIcon />
               </span>
@@ -71,7 +100,13 @@ const Sidebar = () => {
             </button>
           </li>
           <li className="">
-            <button className="flex flex-col items-center justify-center py-1 focus:text-[#5936D9] dark:focus:text-[#ae7aff] sm:w-full sm:flex-row sm:border sm:border-gray-300 sm:p-1.5 sm:hover:bg-gray-100 sm:hover:text-black sm:focus:border-[#5936D9] sm:focus:bg-gray-100 sm:focus:text-black sm:group-hover:justify-start sm:group-hover:px-4 lg:justify-start lg:px-4 dark:sm:border-white dark:sm:hover:bg-[#ae7aff] dark:sm:hover:text-black dark:sm:focus:border-[#ae7aff] dark:sm:focus:bg-[#ae7aff] dark:sm:focus:text-black">
+            <button
+              onClick={handleCollectionClick}
+              className={`flex flex-col items-center justify-center py-1 sm:w-full sm:flex-row sm:border sm:border-gray-300 sm:p-1.5 sm:hover:bg-gray-100 sm:hover:text-black sm:group-hover:justify-start sm:group-hover:px-4 lg:justify-start lg:px-4 dark:sm:border-white dark:sm:hover:bg-[#ae7aff] dark:sm:hover:text-black ${
+                isUserChannelRoute &&
+                "text-[#5936D9] dark:text-[#ae7aff] sm:border-[#5936D9] sm:bg-gray-100 sm:text-black dark:sm:border-[#ae7aff] dark:sm:bg-[#ae7aff] dark:sm:text-black"
+              }`}
+            >
               <span className="inline-block w-5 shrink-0 sm:group-hover:mr-4 lg:mr-4">
                 <CollectionsIcon />
               </span>
