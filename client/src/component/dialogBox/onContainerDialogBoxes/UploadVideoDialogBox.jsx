@@ -6,6 +6,7 @@ import { closeDialog } from "../../../app/features/dialogToggleSlice";
 import { validateUploadVideoForm } from "../../../../utils/validateVideoUploadForm";
 import { uploadVideo } from "../../../app/features/videoSlice";
 import { X } from "lucide-react";
+import UploadingVideoDialogBox from "./UploadingVideoDialogBox.jsx";
 
 const UploadVideoDialogBox = () => {
   const dispatch = useDispatch();
@@ -17,6 +18,7 @@ const UploadVideoDialogBox = () => {
     title: "",
     description: "",
   });
+  const [startUploading, setStartUploading] = useState(false);
 
   function handleClickSave() {
     const validationErrors = validateUploadVideoForm(
@@ -33,7 +35,7 @@ const UploadVideoDialogBox = () => {
       formData.append("thumbnail", thumbnailFile);
 
       dispatch(uploadVideo(formData));
-      closeThisDialog();
+      setStartUploading(true);
     }
   }
 
@@ -86,6 +88,15 @@ const UploadVideoDialogBox = () => {
   function handleRemoveVideo() {
     setVideoFile(null);
     setVideoPreviewURL(null);
+  }
+
+  if (startUploading) {
+    return (
+      <UploadingVideoDialogBox
+        videoName={videoFile?.name}
+        videoSize={videoFile?.size}
+      />
+    );
   }
 
   return (

@@ -20,6 +20,7 @@ const initialState = {
   userVideos: [],
   currentVideo: null,
   videoDetails: null,
+  lastUploadedVideo: null,
   subscriberCount: 0,
   isSubscribed: false,
 
@@ -162,11 +163,13 @@ const videoSlice = createSlice({
       .addCase(uploadVideo.pending, (state) => {
         state.isUploading = true;
       })
-      .addCase(uploadVideo.fulfilled, (state) => {
+      .addCase(uploadVideo.fulfilled, (state, action) => {
+        state.lastUploadedVideo = action.payload;
         state.isUploading = false;
         state.uploadError = null;
       })
       .addCase(uploadVideo.rejected, (state, action) => {
+        state.lastUploadedVideo = null;
         state.isUpdating = false;
         state.uploadError = action.error.message;
       })
@@ -272,6 +275,7 @@ export const selectAllVideos = (state) => state.video.allVideos;
 export const selectVideoDetails = (state) => state.video.videoDetails;
 export const selectUserVideos = (state) => state.video.userVideos;
 export const selectCurrentVideo = (state) => state.video.currentVideo;
+export const selectLastUploadedVideo = (state) => state.video.lastUploadedVideo;
 export const selectIsLoading = (state) => state.video.isLoading;
 export const selectIsUploading = (state) => state.video.isUploading;
 export const selectIsUpdating = (state) => state.video.isUpdating;

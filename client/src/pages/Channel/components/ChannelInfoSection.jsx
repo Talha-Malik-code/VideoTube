@@ -8,7 +8,7 @@ import AButton from "../../../component/AButton";
 import Button from "../../../component/Button";
 import EditIcon from "../../../component/iconComponents/EditIcon";
 
-const ChannelInfoSection = ({ channelData, profileImage, isEditable }) => {
+const ChannelInfoSection = ({ channelData, profileImage, isMyChannel }) => {
   const dispatch = useDispatch();
   const isSubscribing = useSelector(selectIsSubscribing);
 
@@ -33,7 +33,7 @@ const ChannelInfoSection = ({ channelData, profileImage, isEditable }) => {
       </div>
       <div className="inline-block">
         <div className="inline-flex min-w-[145px] justify-end">
-          {isEditable ? (
+          {isMyChannel ? (
             <AButton className="flex w-full items-center gap-x-2">
               <span className="inline-block w-5">
                 <EditIcon />

@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import NoVideo from "../Home/NoVideo";
 import AButton from "../../component/AButton";
 import { useDispatch, useSelector } from "react-redux";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import {
   cleanChannelData,
   getUserVideos,
@@ -23,6 +23,10 @@ const Channel = () => {
   const isLoading = useSelector(selectIsLoading);
   const channelData = useSelector(selectChannelData);
   const isLoggedInUserChannel = user?.username === username;
+  const [searchParams] = useSearchParams();
+
+  const subpage = searchParams.get("subpage");
+  const isEditable = searchParams.get("edit") === "true";
 
   useEffect(() => {
     async function fetchChannelData() {
@@ -50,13 +54,14 @@ const Channel = () => {
         <ChannelInfoSection
           channelData={channelData}
           profileImage={profileImage}
-          isEditable={isLoggedInUserChannel}
+          isMyChannel={isLoggedInUserChannel}
+          isEditable={isEditable}
         />
         <ToggleBarSection />
         <div className="flex justify-center items-center min-h-[34.2rem] p-4">
           <ChannelVideoPage
-            videos={channelData.videos}
-            isEditable={isLoggedInUserChannel}
+            videos={channelData?.videos}
+            isMyChannel={isLoggedInUserChannel}
           />
         </div>
       </div>

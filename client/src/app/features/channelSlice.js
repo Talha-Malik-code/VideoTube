@@ -48,7 +48,7 @@ const channelSlice = createSlice({
   initialState,
   reducers: {
     cleanChannelData: (state) => {
-      (state.channelData = {
+      state.channelData = {
         _id: null,
         username: "",
         fullName: "",
@@ -59,9 +59,12 @@ const channelSlice = createSlice({
         subscribersCount: 0,
         channelSubscribedToCount: 0,
         isSubscribed: false,
-      }),
-        (state.loading = false);
+      };
+      state.loading = false;
       state.error = null;
+    },
+    addUploadedVideo: (state, action) => {
+      state.channelData.videos.push(action.payload);
     },
   },
   extraReducers: (builder) => {
@@ -93,7 +96,7 @@ const channelSlice = createSlice({
   },
 });
 
-export const { cleanChannelData } = channelSlice.actions;
+export const { cleanChannelData, addUploadedVideo } = channelSlice.actions;
 
 export const selectChannelData = (state) => state.channel.channelData;
 export const selectIsLoading = (state) => state.channel.loading;

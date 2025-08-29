@@ -166,9 +166,43 @@ const publishAVideo = asyncHandler(async (req, res) => {
     throw new ApiError(500, "Something went wrong while publishing the video");
   }
 
+  const videoWithUser = await Video.aggregate([
+    {
+      $match: {
+        _id: new mongoose.Types.ObjectId(video?._id),
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "owner",
+        pipeline: [
+          {
+            $project: {
+              fullName: 1,
+              username: 1,
+              avatar: 1,
+            },
+          },
+        ],
+      },
+    },
+    {
+      $addFields: {
+        owner: {
+          $first: "$owner",
+        },
+      },
+    },
+  ]);
+
   return res
     .status(200)
-    .json(new ApiResponse(200, video, "Video published successfully"));
+    .json(
+      new ApiResponse(200, videoWithUser[0], "Video published successfully")
+    );
 });
 
 const getVideoById = asyncHandler(async (req, res) => {
@@ -359,7 +393,16 @@ const updateVideoDetails = asyncHandler(async (req, res) => {
     throw new ApiError(400, "All feilds are required");
   }
 
-  const video = await Video.findByIdAndUpdate(
+  const video = await Video.findById(videoId);
+
+  if (String(video?.owner) !== String(req?.user?._id)) {
+    throw new ApiError(
+      401,
+      "Unauthorized Request. Only owner can update video details."
+    );
+  }
+
+  const updatedVideo = await Video.findByIdAndUpdate(
     videoId,
     {
       $set: {
@@ -372,13 +415,15 @@ const updateVideoDetails = asyncHandler(async (req, res) => {
     }
   );
 
-  if (!video) {
+  if (!updatedVideo) {
     throw new ApiError(401, "Invalid video id");
   }
 
   return res
     .status(200)
-    .json(new ApiResponse(200, video, "Video details updated successfully"));
+    .json(
+      new ApiResponse(200, updatedVideo, "Video details updated successfully")
+    );
 });
 
 const updateVideoThumbnail = asyncHandler(async (req, res) => {
@@ -394,6 +439,14 @@ const updateVideoThumbnail = asyncHandler(async (req, res) => {
   }
 
   const oldVideo = await Video.findById(videoId);
+
+  if (String(video?.owner) !== String(req?.user?._id)) {
+    throw new ApiError(
+      401,
+      "Unauthorized Request. Only owner can update video thumbnail."
+    );
+  }
+
   const oldThumbnail = oldVideo.thumbnail;
   const oldThumbnailParts = oldThumbnail.split("/");
   const oldThumbnailPublicId =
@@ -441,6 +494,13 @@ const deleteVideo = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid video id");
   }
 
+  if (String(video?.owner) !== String(req?.user?._id)) {
+    throw new ApiError(
+      401,
+      "Unauthorized Request. Only owner can update video details."
+    );
+  }
+
   const thumbnail = video.thumbnail;
   const videoFile = video.videoFile;
 
@@ -484,13 +544,22 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Video id is required");
   }
 
-  const video = await Video.findByIdAndUpdate(
+  const video = await Video.findById(videoId);
+
+  if (String(video?.owner) !== String(req?.user?._id)) {
+    throw new ApiError(
+      401,
+      "Unauthorized Request. Only owner can update video details."
+    );
+  }
+
+  const updatedVideo = await Video.findByIdAndUpdate(
     videoId,
     [{ $set: { isPublished: { $not: "$isPublished" } } }], // aggregation pipeline
     { new: true }
   );
 
-  if (!video) {
+  if (!updatedVideo) {
     throw new ApiError(400, "Invalid video id");
   }
 
@@ -499,8 +568,8 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(
         200,
-        video,
-        `Video ${video.isPublished ? "Published" : "Unpublished"} successfully`
+        updatedVideo,
+        `Video ${updatedVideo.isPublished ? "Published" : "Unpublished"} successfully`
       )
     );
 });

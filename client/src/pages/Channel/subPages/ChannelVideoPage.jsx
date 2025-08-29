@@ -6,7 +6,7 @@ import PlusIcon from "../../../component/iconComponents/PlusIcon";
 import { useDispatch } from "react-redux";
 import { openDialog } from "../../../app/features/dialogToggleSlice";
 
-const ChannelVideoPage = ({ videos, isEditable }) => {
+const ChannelVideoPage = ({ videos, isMyChannel }) => {
   const dispatch = useDispatch();
 
   function openUploadVideoDialog() {
@@ -20,7 +20,7 @@ const ChannelVideoPage = ({ videos, isEditable }) => {
           title="No videos uploaded"
           text="This page has yet to upload a video. Search another page in order to find more videos."
         />
-        {isEditable && (
+        {isMyChannel && (
           <Button
             onClick={openUploadVideoDialog}
             className="mt-4 inline-flex items-center gap-x-2 !px-3 !py-2 font-semibold"
