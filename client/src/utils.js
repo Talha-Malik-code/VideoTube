@@ -1,4 +1,6 @@
+import { data } from "react-router-dom";
 import NewToast from "./component/toasts/Toast";
+import { ApiError } from "../../backend/src/utils/ApiError";
 
 async function updateWithFormData(
   path,
@@ -53,10 +55,11 @@ async function fetchData(path, header = {}) {
       const errorText = await res.text();
       console.error("Server error:", res.status, errorText);
       NewToast("error", `Server error: ${res.status}`);
-      return null;
+      throw new Error(errorText);
     }
 
     const data = await res.json();
+    console.log(data);
 
     if (data.success) {
       NewToast("success", data.message);
@@ -64,12 +67,12 @@ async function fetchData(path, header = {}) {
     } else {
       console.log(data);
       NewToast("error", data.message);
-      return null;
+      throw new Error(data.message, { cause: data.data });
     }
   } catch (error) {
     console.error(error);
-    NewToast("warn", "Try after sometime");
-    return null;
+    NewToast("warn", error.message || "Try again later");
+    return data;
   }
 }
 

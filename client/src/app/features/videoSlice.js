@@ -1,5 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { fetchData, updateData, updateWithFormData } from "../../utils";
+import { ApiError } from "../../../../backend/src/utils/ApiError";
 
 const initialState = {
   status: "idle", // 'idle' | 'loading' | 'succeeded' | 'failed'

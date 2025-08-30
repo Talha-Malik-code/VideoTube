@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   selectIsSubscribing,
@@ -7,8 +7,17 @@ import {
 import AButton from "../../../component/AButton";
 import Button from "../../../component/Button";
 import EditIcon from "../../../component/iconComponents/EditIcon";
+import { Link } from "react-router-dom";
+import UploadFileCloudIcon from "../../../component/iconComponents/UploadFileCloudIcon";
+import { updateAvatarImage } from "../../../app/features/userSlice";
 
-const ChannelInfoSection = ({ channelData, profileImage, isMyChannel }) => {
+const ChannelInfoSection = ({
+  username,
+  isEditable,
+  channelData,
+  profileImage,
+  isMyChannel,
+}) => {
   const dispatch = useDispatch();
   const isSubscribing = useSelector(selectIsSubscribing);
 
@@ -16,10 +25,35 @@ const ChannelInfoSection = ({ channelData, profileImage, isMyChannel }) => {
     await dispatch(toggleSubscription(channelData?._id));
   }
 
+  function handleAvatarFileChange(e) {
+    const file = e.target.files[0];
+    if (file) {
+      const formData = new FormData();
+      formData.append("avatar", file);
+      dispatch(updateAvatarImage(formData));
+    }
+  }
+
   return (
     <div className="flex flex-wrap gap-4 pb-4 pt-6">
       <span className="relative -mt-12 inline-block h-28 w-28 shrink-0 overflow-hidden rounded-full border-2 border-white dark:border-[#e5e7eb]">
         <img src={profileImage} alt="Channel" className="h-full w-full" />
+        {isEditable && (
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            <input
+              onChange={handleAvatarFileChange}
+              type="file"
+              id="profile-image"
+              className="hidden"
+            />
+            <label
+              htmlFor="profile-image"
+              className="inline-block h-8 w-8 cursor-pointer rounded-lg bg-white/60 p-1 text-[#ae7aff] hover:bg-white"
+            >
+              <UploadFileCloudIcon />
+            </label>
+          </div>
+        )}
       </span>
       <div className="mr-auto inline-block">
         <h1 className="font-bolg text-xl text-black dark:text-white">
@@ -34,12 +68,22 @@ const ChannelInfoSection = ({ channelData, profileImage, isMyChannel }) => {
       <div className="inline-block">
         <div className="inline-flex min-w-[145px] justify-end">
           {isMyChannel ? (
-            <AButton className="flex w-full items-center gap-x-2">
-              <span className="inline-block w-5">
-                <EditIcon />
-              </span>
-              Edit
-            </AButton>
+            isEditable ? (
+              <Link to={`/channel/${username}`}>
+                <AButton className="flex w-full items-center gap-x-2">
+                  View channel
+                </AButton>
+              </Link>
+            ) : (
+              <Link to={`/channel/${username}?edit=true`}>
+                <AButton className="flex w-full items-center gap-x-2">
+                  <span className="inline-block w-5">
+                    <EditIcon />
+                  </span>
+                  Edit
+                </AButton>
+              </Link>
+            )
           ) : (
             <AButton
               className={`group/btn flex w-full items-center gap-x-2 transition-colors ${

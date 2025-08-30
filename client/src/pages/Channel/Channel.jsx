@@ -26,7 +26,8 @@ const Channel = () => {
   const [searchParams] = useSearchParams();
 
   const subpage = searchParams.get("subpage");
-  const isEditable = searchParams.get("edit") === "true";
+  const isEditable =
+    searchParams.get("edit") === "true" && isLoggedInUserChannel;
 
   useEffect(() => {
     async function fetchChannelData() {
@@ -47,22 +48,51 @@ const Channel = () => {
     return <ChannelSkeleton />;
   }
 
+  let subpageComponent = null;
+
+  if (isEditable) {
+    if (subpage === "edit_channel") {
+      subpageComponent = <h1>Edit Channel</h1>;
+    } else if (subpage === "change_password") {
+      subpageComponent = <h1>Change Password</h1>;
+    } else {
+      subpageComponent = <h1>Edit Profile</h1>;
+    }
+  } else {
+    if (subpage === "playlists") {
+      subpageComponent = <h1>Playlists</h1>;
+    } else if (subpage === "tweets") {
+      subpageComponent = <h1>Tweets</h1>;
+    } else if (subpage === "subscribed") {
+      subpageComponent = <h1>Subscribed Channels</h1>;
+    } else {
+      subpageComponent = (
+        <ChannelVideoPage
+          videos={channelData?.videos}
+          isMyChannel={isLoggedInUserChannel}
+        />
+      );
+    }
+  }
+
   return (
     <>
-      <CoverImage coverImage={coverImage} isEditable={isLoggedInUserChannel} />
+      <CoverImage coverImage={coverImage} isEditable={isEditable} />
       <div className="bg-white px-4 pb-4 dark:bg-[#121212]">
         <ChannelInfoSection
+          username={username}
           channelData={channelData}
           profileImage={profileImage}
           isMyChannel={isLoggedInUserChannel}
           isEditable={isEditable}
         />
-        <ToggleBarSection />
+        <ToggleBarSection
+          username={username}
+          isEditable={isEditable}
+          subpage={subpage}
+        />
         <div className="flex justify-center items-center min-h-[34.2rem] p-4">
-          <ChannelVideoPage
-            videos={channelData?.videos}
-            isMyChannel={isLoggedInUserChannel}
-          />
+          {subpageComponent}
         </div>
       </div>
     </>

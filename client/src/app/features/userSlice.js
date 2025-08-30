@@ -4,6 +4,9 @@ import { fetchData, updateData, updateWithFormData } from "../../utils";
 const initialState = {
   status: "idle", // 'idle' | 'loading' | 'succeeded' | 'failed',
   isLoggedIn: false,
+  isUpdatingAvatar: false,
+  isUpdatingCover: false,
+  isUpdating: false,
   userData: null,
   error: null,
 };
@@ -31,6 +34,16 @@ export const logoutUser = createAsyncThunk("user/logout", async () => {
   const data = await updateData("users/logout", {}, "POST");
   return data;
 });
+
+export const updateAvatarImage = createAsyncThunk(
+  "user/updateAvatar",
+  async (formData) => {
+    console.log(formData);
+
+    const data = await updateData("users/avatar", formData);
+    return data;
+  }
+);
 
 export const checkAuthStatus = createAsyncThunk(
   "user/checkAuthStatus",
@@ -104,6 +117,18 @@ const userSlice = createSlice({
         state.error = action.error.message;
         state.isLoggedIn = false;
         state.userData = null;
+      })
+      .addCase(updateAvatarImage.pending, (state) => {
+        state.isUpdatingAvatar = true;
+      })
+      .addCase(updateAvatarImage.fulfilled, (state, action) => {
+        state.isUpdatingAvatar = false;
+        console.log(action.payload);
+        // state.userData = { ...state.userData, avatar: action.payload };
+      })
+      .addCase(updateAvatarImage.rejected, (state, action) => {
+        state.isUpdatingAvatar = false;
+        state.error = action.error.message;
       });
   },
 });
