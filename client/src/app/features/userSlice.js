@@ -13,43 +13,64 @@ const initialState = {
 
 export const registerUser = createAsyncThunk(
   "user/register",
-  async (formData) => {
-    const data = await updateWithFormData("users/register", formData);
-    return data;
+  async (formData, { rejectWithValue }) => {
+    try {
+      const data = await updateWithFormData("users/register", formData);
+      return data;
+    } catch (error) {
+      return rejectWithValue(error.message || "Registration failed");
+    }
   }
 );
 
 export const loginUser = createAsyncThunk(
   "user/login",
   async (credentials, { rejectWithValue }) => {
-    const data = await updateData("users/login", credentials, "POST");
-    if (!data) {
-      return rejectWithValue("Login failed. Check credentials.");
+    try {
+      const data = await updateData("users/login", credentials, "POST");
+      return data;
+    } catch (error) {
+      return rejectWithValue(
+        error.message || "Login failed. Check credentials."
+      );
     }
-    return data;
   }
 );
 
-export const logoutUser = createAsyncThunk("user/logout", async () => {
-  const data = await updateData("users/logout", {}, "POST");
-  return data;
-});
+export const logoutUser = createAsyncThunk(
+  "user/logout",
+  async (_, { rejectWithValue }) => {
+    try {
+      const data = await updateData("users/logout", {}, "POST");
+      return data;
+    } catch (error) {
+      return rejectWithValue(error.message || "Logout failed");
+    }
+  }
+);
 
 export const updateAvatarImage = createAsyncThunk(
   "user/updateAvatar",
-  async (formData) => {
-    console.log(formData);
-
-    const data = await updateData("users/avatar", formData);
-    return data;
+  async (formData, { rejectWithValue }) => {
+    try {
+      console.log(formData);
+      const data = await updateWithFormData("users/avatar", formData);
+      return data;
+    } catch (error) {
+      return rejectWithValue(error.message || "Failed to update avatar");
+    }
   }
 );
 
 export const checkAuthStatus = createAsyncThunk(
   "user/checkAuthStatus",
-  async () => {
-    const data = await fetchData("users/current-user");
-    return data;
+  async (_, { rejectWithValue }) => {
+    try {
+      const data = await fetchData("users/current-user");
+      return data;
+    } catch (error) {
+      return rejectWithValue(error.message || "Failed to check auth status");
+    }
   }
 );
 
@@ -74,7 +95,7 @@ const userSlice = createSlice({
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.status = "failed";
-        state.error = action.error.message;
+        state.error = action.payload || action.error.message;
         state.isLoggedIn = false;
         state.userData = null;
       })
@@ -102,7 +123,7 @@ const userSlice = createSlice({
       })
       .addCase(logoutUser.rejected, (state, action) => {
         state.status = "failed";
-        state.error = action.error.message;
+        state.error = action.payload || action.error.message;
       })
       .addCase(checkAuthStatus.pending, (state) => {
         state.status = "loading";
@@ -114,7 +135,7 @@ const userSlice = createSlice({
       })
       .addCase(checkAuthStatus.rejected, (state, action) => {
         state.status = "failed";
-        state.error = action.error.message;
+        state.error = action.payload || action.error.message;
         state.isLoggedIn = false;
         state.userData = null;
       })
@@ -128,7 +149,7 @@ const userSlice = createSlice({
       })
       .addCase(updateAvatarImage.rejected, (state, action) => {
         state.isUpdatingAvatar = false;
-        state.error = action.error.message;
+        state.error = action.payload || action.error.message;
       });
   },
 });

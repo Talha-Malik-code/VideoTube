@@ -1,6 +1,5 @@
-import { data } from "react-router-dom";
 import NewToast from "./component/toasts/Toast";
-import { ApiError } from "../../backend/src/utils/ApiError";
+import { FrontendError } from "./utils/FrontendError";
 
 async function updateWithFormData(
   path,
@@ -22,8 +21,12 @@ async function updateWithFormData(
     if (!response.ok) {
       const errorText = await response.text();
       console.error("Server error:", response.status, errorText);
-      NewToast("error", `Server error: ${response.status}`);
-      return null;
+      const frontendError = FrontendError.fromServerResponse(
+        response,
+        errorText
+      );
+      NewToast("error", frontendError.getUserMessage());
+      throw frontendError;
     }
 
     const data = await response.json();
@@ -32,13 +35,31 @@ async function updateWithFormData(
       NewToast("success", data.message);
       return data.data;
     } else {
-      NewToast("error", data.message);
-      return null;
+      const error = new FrontendError(
+        data.message || "Operation failed",
+        response.status,
+        "SERVER_ERROR",
+        null,
+        { responseData: data }
+      );
+      NewToast("error", error.getUserMessage());
+      throw error;
     }
   } catch (error) {
     console.error(error);
-    NewToast("error", "Network error. Please try again.");
-    return null;
+
+    // If it's already a FrontendError, re-throw it
+    if (error instanceof FrontendError) {
+      throw error;
+    }
+
+    // Handle network errors (fetch failures)
+    const networkError = FrontendError.networkError(
+      "Unable to connect to server. Please check your connection.",
+      error
+    );
+    NewToast("error", networkError.getUserMessage());
+    throw networkError;
   }
 }
 
@@ -54,8 +75,9 @@ async function fetchData(path, header = {}) {
     if (!res.ok) {
       const errorText = await res.text();
       console.error("Server error:", res.status, errorText);
-      NewToast("error", `Server error: ${res.status}`);
-      throw new Error(errorText);
+      const frontendError = FrontendError.fromServerResponse(res, errorText);
+      NewToast("error", frontendError.getUserMessage());
+      throw frontendError;
     }
 
     const data = await res.json();
@@ -66,13 +88,31 @@ async function fetchData(path, header = {}) {
       return data.data;
     } else {
       console.log(data);
-      NewToast("error", data.message);
-      throw new Error(data.message, { cause: data.data });
+      const error = new FrontendError(
+        data.message || "Request failed",
+        res.status,
+        "SERVER_ERROR",
+        null,
+        { responseData: data }
+      );
+      NewToast("error", error.getUserMessage());
+      throw error;
     }
   } catch (error) {
     console.error(error);
-    NewToast("warn", error.message || "Try again later");
-    return data;
+
+    // If it's already a FrontendError, re-throw it
+    if (error instanceof FrontendError) {
+      throw error;
+    }
+
+    // Handle network errors (fetch failures)
+    const networkError = FrontendError.networkError(
+      "Unable to connect to server. Please check your connection.",
+      error
+    );
+    NewToast("warn", networkError.getUserMessage());
+    throw networkError;
   }
 }
 
@@ -91,8 +131,9 @@ async function updateData(path, content, methodType = "PATCH") {
     if (!res.ok) {
       const errorText = await res.text();
       console.error("Server error:", res.status, errorText);
-      NewToast("error", `Server error: ${res.status}`);
-      return null;
+      const frontendError = FrontendError.fromServerResponse(res, errorText);
+      NewToast("error", frontendError.getUserMessage());
+      throw frontendError;
     }
 
     const data = await res.json();
@@ -102,13 +143,31 @@ async function updateData(path, content, methodType = "PATCH") {
       return data.data;
     } else {
       console.log(data);
-      NewToast("error", data.message);
-      return null;
+      const error = new FrontendError(
+        data.message || "Update failed",
+        res.status,
+        "SERVER_ERROR",
+        null,
+        { responseData: data }
+      );
+      NewToast("error", error.getUserMessage());
+      throw error;
     }
   } catch (error) {
     console.error(error);
-    NewToast("warn", "Try after sometime");
-    return null;
+
+    // If it's already a FrontendError, re-throw it
+    if (error instanceof FrontendError) {
+      throw error;
+    }
+
+    // Handle network errors (fetch failures)
+    const networkError = FrontendError.networkError(
+      "Unable to connect to server. Please check your connection.",
+      error
+    );
+    NewToast("warn", networkError.getUserMessage());
+    throw networkError;
   }
 }
 

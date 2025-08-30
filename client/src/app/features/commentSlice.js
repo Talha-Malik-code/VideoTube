@@ -246,7 +246,7 @@ const commentSlice = createSlice({
         } else {
           state.isLoading = false;
         }
-        state.error = action.payload;
+        state.error = action.payload || action.error.message;
       })
       // Get comment replies
       .addCase(getCommentReplies.pending, (state, action) => {
@@ -300,7 +300,7 @@ const commentSlice = createSlice({
       .addCase(getCommentReplies.rejected, (state, action) => {
         const { commentId } = action.meta.arg;
         state.isGettingReplies[commentId] = false;
-        state.error = action.payload;
+        state.error = action.payload || action.error.message;
       })
       // Add comment
       .addCase(addComment.pending, (state) => {
@@ -341,7 +341,7 @@ const commentSlice = createSlice({
       })
       .addCase(addComment.rejected, (state, action) => {
         state.isAdding = false;
-        state.error = action.payload;
+        state.error = action.payload || action.error.message;
       })
       // Update comment
       .addCase(updateComment.pending, (state) => {
@@ -380,7 +380,7 @@ const commentSlice = createSlice({
       })
       .addCase(updateComment.rejected, (state, action) => {
         state.isUpdating = false;
-        state.error = action.payload;
+        state.error = action.payload || action.error.message;
       })
       // Delete comment
       .addCase(deleteComment.pending, (state, action) => {
@@ -487,7 +487,7 @@ const commentSlice = createSlice({
       .addCase(deleteComment.rejected, (state, action) => {
         const commentId = action.meta.arg;
         state.isDeleting[commentId] = false;
-        state.error = action.payload;
+        state.error = action.payload || action.error.message;
       });
   },
 });

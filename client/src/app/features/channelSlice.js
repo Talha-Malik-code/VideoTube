@@ -77,7 +77,7 @@ const channelSlice = createSlice({
         state.loading = false;
       })
       .addCase(getUserVideos.rejected, (state, action) => {
-        state.error = action.payload;
+        state.error = action.payload || action.error.message;
         state.loading = false;
       })
       .addCase(toggleSubscription.pending, (state) => {
@@ -91,7 +91,7 @@ const channelSlice = createSlice({
       })
       .addCase(toggleSubscription.rejected, (state, action) => {
         state.isSubscribing = false;
-        state.error = action.error.message;
+        state.error = action.payload || action.error.message;
       });
   },
 });

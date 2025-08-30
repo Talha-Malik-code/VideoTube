@@ -100,7 +100,7 @@ const likeSlice = createSlice({
       })
       .addCase(toggleVideoLike.rejected, (state, action) => {
         state.isLiking = false;
-        state.error = action.payload;
+        state.error = action.payload || action.error.message;
       })
       .addCase(toggleCommentLike.pending, (state) => {
         state.isLiking = true;
@@ -117,7 +117,7 @@ const likeSlice = createSlice({
       })
       .addCase(toggleCommentLike.rejected, (state, action) => {
         state.isLiking = false;
-        state.error = action.payload;
+        state.error = action.payload || action.error.message;
       })
       .addCase(toggleTweetLike.pending, (state) => {
         state.isLiking = true;
@@ -133,7 +133,7 @@ const likeSlice = createSlice({
       })
       .addCase(toggleTweetLike.rejected, (state, action) => {
         state.isLiking = false;
-        state.error = action.payload;
+        state.error = action.payload || action.error.message;
       });
   },
 });

@@ -21,7 +21,7 @@ export const toggleVideoDislike = createAsyncThunk(
       const data = await updateData(`dislike/toggle/v/${videoId}`, {}, "POST");
       return { videoId, data };
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(error.message || "Failed to toggle video dislike");
     }
   }
 );
@@ -37,7 +37,9 @@ export const toggleCommentDislike = createAsyncThunk(
       );
       return { commentId, data };
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(
+        error.message || "Failed to toggle comment dislike"
+      );
     }
   }
 );
@@ -49,7 +51,7 @@ export const toggleTweetDislike = createAsyncThunk(
       const data = await updateData(`dislike/toggle/t/${tweetId}`, {}, "POST");
       return { tweetId, data };
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(error.message || "Failed to toggle tweet dislike");
     }
   }
 );
@@ -104,7 +106,7 @@ const dislikeSlice = createSlice({
       })
       .addCase(toggleVideoDislike.rejected, (state, action) => {
         state.isDisliking = false;
-        state.error = action.payload;
+        state.error = action.payload || action.error.message;
       })
       .addCase(toggleCommentDislike.pending, (state) => {
         state.isDisliking = true;
@@ -120,7 +122,7 @@ const dislikeSlice = createSlice({
       })
       .addCase(toggleCommentDislike.rejected, (state, action) => {
         state.isDisliking = false;
-        state.error = action.payload;
+        state.error = action.payload || action.error.message;
       })
       .addCase(toggleTweetDislike.pending, (state) => {
         state.isDisliking = true;
@@ -136,7 +138,7 @@ const dislikeSlice = createSlice({
       })
       .addCase(toggleTweetDislike.rejected, (state, action) => {
         state.isDisliking = false;
-        state.error = action.payload;
+        state.error = action.payload || action.error.message;
       });
   },
 });

@@ -1,6 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { fetchData, updateData, updateWithFormData } from "../../utils";
-import { ApiError } from "../../../../backend/src/utils/ApiError";
 
 const initialState = {
   status: "idle", // 'idle' | 'loading' | 'succeeded' | 'failed'
@@ -44,7 +43,7 @@ export const uploadVideo = createAsyncThunk(
       });
       return data;
     } catch (error) {
-      return rejectWithValue(error.response.data.message);
+      return rejectWithValue(error.message || "Failed to upload video");
     }
   }
 );
@@ -56,7 +55,7 @@ export const getAllVideos = createAsyncThunk(
       const data = await fetchData("videos?page=1&limit=10");
       return data;
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(error.message || "Failed to fetch videos");
     }
   }
 );
@@ -68,22 +67,26 @@ export const getVideoById = createAsyncThunk(
       const data = await fetchData(`videos/${id}`);
       return data;
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(error.message || "Failed to fetch video");
     }
   }
 );
 
 export const updateVideo = createAsyncThunk(
   "video/updateVideo",
-  async (id, { rejectWithValue }) => {
+  async ({ id, formData }, { rejectWithValue }) => {
     try {
-      const data = await updateWithFormData(`videos/${id}`, FormData, {
-        methodType: "PATCH",
-        credentials: "include",
-      });
+      const data = await updateWithFormData(
+        `videos/${id}`,
+        formData,
+        {
+          credentials: "include",
+        },
+        "PATCH"
+      );
       return data;
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(error.message || "Failed to update video");
     }
   }
 );
@@ -95,7 +98,7 @@ export const deleteVideo = createAsyncThunk(
       const data = await updateData(`videos/${id}`, {}, "DELETE");
       return data;
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(error.message || "Failed to delete video");
     }
   }
 );
@@ -107,21 +110,23 @@ export const togglePublishStatus = createAsyncThunk(
       const data = await updateData(`videos/toggle/publish/${id}`, {}, "PATCH");
       return data;
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(
+        error.message || "Failed to toggle publish status"
+      );
     }
   }
 );
 
 export const updateVideoThumbnail = createAsyncThunk(
   "video/updateVideoThumbnail",
-  async (id, { rejectWithValue }) => {
+  async ({ id, formData }, { rejectWithValue }) => {
     try {
-      const data = await updateWithFormData(`videos/t/${id}`, FormData, {
+      const data = await updateWithFormData(`videos/t/${id}`, formData, {
         credentials: "include",
       });
       return data;
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(error.message || "Failed to update thumbnail");
     }
   }
 );
@@ -133,7 +138,9 @@ export const fetchRecommendedVideos = createAsyncThunk(
       const data = await fetchData("videos?page=1&limit=10");
       return data;
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(
+        error.message || "Failed to fetch recommended videos"
+      );
     }
   }
 );
@@ -145,7 +152,7 @@ export const toggleSubscription = createAsyncThunk(
       const data = await updateData(`sub/c/${id}`, {}, "POST");
       return data;
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(error.message || "Failed to toggle subscription");
     }
   }
 );
@@ -171,8 +178,8 @@ const videoSlice = createSlice({
       })
       .addCase(uploadVideo.rejected, (state, action) => {
         state.lastUploadedVideo = null;
-        state.isUpdating = false;
-        state.uploadError = action.error.message;
+        state.isUploading = false;
+        state.uploadError = action.payload || action.error.message;
       })
       .addCase(getAllVideos.pending, (state) => {
         state.isLoading = true;
@@ -183,7 +190,7 @@ const videoSlice = createSlice({
       })
       .addCase(getAllVideos.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.error.message;
+        state.error = action.payload || action.error.message;
       })
       .addCase(getVideoById.pending, (state) => {
         state.isLoading = true;
@@ -197,7 +204,7 @@ const videoSlice = createSlice({
       })
       .addCase(getVideoById.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.error.message;
+        state.error = action.payload || action.error.message;
       })
       .addCase(updateVideo.pending, (state) => {
         state.isUpdating = true;
@@ -208,7 +215,7 @@ const videoSlice = createSlice({
       })
       .addCase(updateVideo.rejected, (state, action) => {
         state.isUpdating = false;
-        state.error = action.error.message;
+        state.error = action.payload || action.error.message;
       })
       .addCase(deleteVideo.pending, (state) => {
         state.isDeleting = true;
@@ -219,7 +226,7 @@ const videoSlice = createSlice({
       })
       .addCase(deleteVideo.rejected, (state, action) => {
         state.isDeleting = false;
-        state.error = action.error.message;
+        state.error = action.payload || action.error.message;
       })
       .addCase(togglePublishStatus.pending, (state) => {
         state.isUpdating = true;
@@ -230,7 +237,7 @@ const videoSlice = createSlice({
       })
       .addCase(togglePublishStatus.rejected, (state, action) => {
         state.isUpdating = false;
-        state.error = action.error.message;
+        state.error = action.payload || action.error.message;
       })
       .addCase(updateVideoThumbnail.pending, (state) => {
         state.isUpdating = true;
@@ -241,7 +248,7 @@ const videoSlice = createSlice({
       })
       .addCase(updateVideoThumbnail.rejected, (state, action) => {
         state.isUpdating = false;
-        state.error = action.error.message;
+        state.error = action.payload || action.error.message;
       })
       .addCase(fetchRecommendedVideos.pending, (state) => {
         state.isLoading = true;
@@ -252,7 +259,7 @@ const videoSlice = createSlice({
       })
       .addCase(fetchRecommendedVideos.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.error.message;
+        state.error = action.payload || action.error.message;
       })
       .addCase(toggleSubscription.pending, (state) => {
         state.isSubscribing = true;
@@ -265,7 +272,7 @@ const videoSlice = createSlice({
       })
       .addCase(toggleSubscription.rejected, (state, action) => {
         state.isSubscribing = false;
-        state.error = action.error.message;
+        state.error = action.payload || action.error.message;
       });
   },
 });
