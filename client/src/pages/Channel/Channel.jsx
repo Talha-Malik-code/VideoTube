@@ -4,7 +4,6 @@ import AButton from "../../component/AButton";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams, useSearchParams } from "react-router-dom";
 import {
-  cleanChannelData,
   getChannelData,
   selectChannelData,
   selectError,
@@ -33,14 +32,18 @@ const Channel = () => {
     searchParams.get("edit") === "true" && isLoggedInUserChannel;
 
   useEffect(() => {
+    let ignore = false;
+
     async function fetchChannelData() {
       await dispatch(getChannelData(username));
     }
 
-    fetchChannelData();
+    if (!ignore) {
+      fetchChannelData();
+    }
 
     return () => {
-      dispatch(cleanChannelData());
+      ignore = true;
     };
   }, [dispatch, username]);
 

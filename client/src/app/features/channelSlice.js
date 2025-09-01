@@ -1,6 +1,8 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { fetchData, updateData } from "../../utils";
 
+const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+
 const initialState = {
   channelData: {
     _id: null,
@@ -29,19 +31,32 @@ const initialState = {
     },
     isNotFetched: true,
   },
+
   channelVideosLoading: false,
   channelVideosError: null,
   loading: false,
   error: null,
   isSubscribing: false,
+
+  cache: {
+    channelData: {}, // { username: { data, timestamp } }
+    channelVideos: {}, // { channelId: { data, timestamp, queryKey } }
+  },
 };
 
 export const getChannelData = createAsyncThunk(
   "video/getChannelData",
-  async (username, { rejectWithValue }) => {
+  async (username, { getState, rejectWithValue }) => {
     try {
+      const { cache } = getState().channel;
+      const cached = cache.channelData[username];
+
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        return { data: cached.data, username, fromApi: false };
+      }
+
       const data = await fetchData(`users/c/${username}`);
-      return data;
+      return { data, username, fromApi: true };
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -52,13 +67,22 @@ export const getChannelVideos = createAsyncThunk(
   "video/getChannelVideos",
   async (
     { channelId, query = { page: 1, limit: 10 } } = {},
-    { rejectWithValue }
+    { getState, rejectWithValue }
   ) => {
     try {
+      const { cache } = getState().channel;
+      const queryKey = JSON.stringify(query);
+      const cacheKey = `${channelId}-${queryKey}`;
+      const cached = cache.channelVideos[cacheKey];
+
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        return { data: cached.data, cacheKey, fromApi: false };
+      }
+
       const params = { userId: channelId, ...query };
       const paramsString = new URLSearchParams(params).toString();
       const data = await fetchData(`videos?${paramsString}`);
-      return data;
+      return { data, cacheKey, fromApi: true };
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -82,36 +106,13 @@ const channelSlice = createSlice({
   initialState,
   reducers: {
     cleanChannelData: (state) => {
-      state.channelData = {
-        _id: null,
-        username: "",
-        fullName: "",
-        email: "",
-        avatar: "",
-        coverImage: "",
-        videos: [],
-        subscribersCount: 0,
-        channelSubscribedToCount: 0,
-        isSubscribed: false,
-      };
-      state.channelVideos = {
-        docs: [],
-        pagination: {
-          totalDocs: 0,
-          limit: 10,
-          page: 1,
-          totalPages: 1,
-          pagingCounter: 1,
-          hasPrevPage: false,
-          hasNextPage: false,
-          prevPage: null,
-          nextPage: null,
-        },
-      };
+      state.channelData = initialState.channelData;
+      state.channelVideos = initialState.channelVideos;
       state.channelVideosLoading = false;
       state.channelVideosError = null;
       state.loading = false;
       state.error = null;
+      state.cache = initialState.cache;
     },
     addUploadedVideo: (state, action) => {
       state.channelData.videos.push(action.payload);
@@ -123,8 +124,19 @@ const channelSlice = createSlice({
         state.loading = true;
       })
       .addCase(getChannelData.fulfilled, (state, action) => {
-        state.channelData = action.payload;
+        const { data, username, fromApi } = action.payload;
+        console.log("getChannelData.fulfilled", data, username, fromApi);
+
+        state.channelData = data;
         state.loading = false;
+        state.error = null;
+
+        if (fromApi) {
+          state.cache.channelData[username] = {
+            data,
+            timestamp: Date.now(),
+          };
+        }
       })
       .addCase(getChannelData.rejected, (state, action) => {
         state.error = action.payload || action.error.message;
@@ -134,8 +146,18 @@ const channelSlice = createSlice({
         state.channelVideosLoading = true;
       })
       .addCase(getChannelVideos.fulfilled, (state, action) => {
-        state.channelVideos = action.payload;
+        const { data, cacheKey, fromApi } = action.payload;
+
+        state.channelVideos = data;
         state.channelVideosLoading = false;
+        state.channelVideosError = null;
+
+        if (fromApi) {
+          state.cache.channelVideos[cacheKey] = {
+            data,
+            timestamp: Date.now(),
+          };
+        }
       })
       .addCase(getChannelVideos.rejected, (state, action) => {
         state.channelVideosError = action.payload || action.error.message;
