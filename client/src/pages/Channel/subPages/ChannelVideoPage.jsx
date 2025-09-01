@@ -1,19 +1,46 @@
-import React from "react";
+import React, { useEffect } from "react";
 import CardVideo from "../../Home/CardViewListing/CardVideo";
 import NoVideo from "../../Home/NoVideo";
 import Button from "../../../component/Button";
 import PlusIcon from "../../../component/iconComponents/PlusIcon";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { openDialog } from "../../../app/features/dialogToggleSlice";
+import {
+  getChannelVideos,
+  selectChannelVideos,
+  selectChannelVideosLoading,
+} from "../../../app/features/channelSlice";
+import VideoCardSkeleton from "../../../component/skeletons/VideoCardSkeleton";
 
-const ChannelVideoPage = ({ videos, isMyChannel }) => {
+const ChannelVideoPage = ({ isMyChannel, channelId }) => {
   const dispatch = useDispatch();
+  const channelVideos = useSelector(selectChannelVideos);
+  const isLoading = useSelector(selectChannelVideosLoading);
+
+  useEffect(() => {
+    let ignore = false;
+
+    async function fetchVideos() {
+      await dispatch(getChannelVideos({ channelId }));
+    }
+
+    if (!ignore) {
+      fetchVideos();
+    }
+    return () => {
+      ignore = true;
+    };
+  }, [dispatch, channelId]);
 
   function openUploadVideoDialog() {
     dispatch(openDialog("uploadVideo"));
   }
 
-  if (!videos?.length) {
+  if (isLoading) {
+    return <VideoCardSkeleton count={12} />;
+  }
+
+  if (!channelVideos?.docs?.length) {
     return (
       <div className="flex flex-col w-full h-full items-center justify-center">
         <NoVideo
@@ -38,7 +65,7 @@ const ChannelVideoPage = ({ videos, isMyChannel }) => {
   return (
     <section className="w-full">
       <div className="grid grid-cols-[repeat(auto-fit,_minmax(300px,_1fr))] gap-4 p-4">
-        {videos.map((video) => (
+        {channelVideos.docs.map((video) => (
           <CardVideo key={video._id} {...video} />
         ))}
       </div>

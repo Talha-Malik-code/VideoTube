@@ -50,9 +50,9 @@ export const uploadVideo = createAsyncThunk(
 
 export const getAllVideos = createAsyncThunk(
   "video/getVideos",
-  async (_, { rejectWithValue }) => {
+  async (query = { page: 1, limit: 10 }, { rejectWithValue }) => {
     try {
-      const data = await fetchData("videos?page=1&limit=10");
+      const data = await fetchData(`videos?${new URLSearchParams(query)}`);
       return data;
     } catch (error) {
       return rejectWithValue(error.message || "Failed to fetch videos");

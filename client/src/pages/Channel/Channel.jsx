@@ -5,8 +5,9 @@ import { useDispatch, useSelector } from "react-redux";
 import { useParams, useSearchParams } from "react-router-dom";
 import {
   cleanChannelData,
-  getUserVideos,
+  getChannelData,
   selectChannelData,
+  selectError,
   selectIsLoading,
 } from "../../app/features/channelSlice";
 import ChannelSkeleton from "../../component/skeletons/ChannelSkeleton";
@@ -15,6 +16,7 @@ import ChannelInfoSection from "./components/ChannelInfoSection";
 import ToggleBarSection from "./components/ToggleBarSection";
 import ChannelVideoPage from "./subPages/ChannelVideoPage";
 import { selectUserData } from "../../app/features/userSlice";
+import ChannelNotFound from "../../component/notFound/ChannelNotFound";
 
 const Channel = () => {
   const dispatch = useDispatch();
@@ -22,6 +24,7 @@ const Channel = () => {
   const user = useSelector(selectUserData);
   const isLoading = useSelector(selectIsLoading);
   const channelData = useSelector(selectChannelData);
+  const error = useSelector(selectError);
   const isLoggedInUserChannel = user?.username === username;
   const [searchParams] = useSearchParams();
 
@@ -31,7 +34,7 @@ const Channel = () => {
 
   useEffect(() => {
     async function fetchChannelData() {
-      await dispatch(getUserVideos(username));
+      await dispatch(getChannelData(username));
     }
 
     fetchChannelData();
@@ -44,7 +47,16 @@ const Channel = () => {
   const coverImage = channelData?.coverImage;
   const profileImage = channelData?.avatar || "../AvatarPH.png";
 
-  if (isLoading) {
+  if (error) {
+    return (
+      <ChannelNotFound
+        title="Channel not found"
+        text="The channel you are looking for does not exist. Please try to search for another channel."
+      />
+    );
+  }
+
+  if (isLoading || !channelData?._id) {
     return <ChannelSkeleton />;
   }
 
@@ -68,8 +80,8 @@ const Channel = () => {
     } else {
       subpageComponent = (
         <ChannelVideoPage
-          videos={channelData?.videos}
           isMyChannel={isLoggedInUserChannel}
+          channelId={channelData?._id}
         />
       );
     }
