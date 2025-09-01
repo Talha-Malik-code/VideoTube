@@ -16,6 +16,7 @@ const initialState = {
       prevPage: null,
       nextPage: null,
     },
+    isNotFetched: true,
   },
   userVideos: [],
   currentVideo: null,

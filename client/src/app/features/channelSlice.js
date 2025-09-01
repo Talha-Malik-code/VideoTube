@@ -27,6 +27,7 @@ const initialState = {
       prevPage: null,
       nextPage: null,
     },
+    isNotFetched: true,
   },
   channelVideosLoading: false,
   channelVideosError: null,

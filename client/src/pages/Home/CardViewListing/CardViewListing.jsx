@@ -9,6 +9,7 @@ import {
   selectIsLoading,
 } from "../../../app/features/videoSlice";
 import NoVideo from "../NoVideo";
+import WarningError from "../../../component/notFound/WarningError";
 
 const CardViewListing = () => {
   const dispatch = useDispatch();
@@ -33,7 +34,11 @@ const CardViewListing = () => {
     };
   }, [dispatch]);
 
-  if (loading) {
+  if (error) {
+    return <WarningError title="Error fetching videos" text={error} />;
+  }
+
+  if (loading && videos?.isNotFetched) {
     return <VideoCardSkeleton count={12} />;
   }
 

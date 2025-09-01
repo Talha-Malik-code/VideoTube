@@ -8,14 +8,17 @@ import { openDialog } from "../../../app/features/dialogToggleSlice";
 import {
   getChannelVideos,
   selectChannelVideos,
+  selectChannelVideosError,
   selectChannelVideosLoading,
 } from "../../../app/features/channelSlice";
 import VideoCardSkeleton from "../../../component/skeletons/VideoCardSkeleton";
+import WarningError from "../../../component/notFound/WarningError";
 
 const ChannelVideoPage = ({ isMyChannel, channelId }) => {
   const dispatch = useDispatch();
   const channelVideos = useSelector(selectChannelVideos);
   const isLoading = useSelector(selectChannelVideosLoading);
+  const error = useSelector(selectChannelVideosError);
 
   useEffect(() => {
     let ignore = false;
@@ -36,7 +39,11 @@ const ChannelVideoPage = ({ isMyChannel, channelId }) => {
     dispatch(openDialog("uploadVideo"));
   }
 
-  if (isLoading) {
+  if (error) {
+    return <WarningError title="Error fetching videos" text={error} />;
+  }
+
+  if (isLoading && channelVideos?.isNotFetched) {
     return <VideoCardSkeleton count={12} />;
   }
 

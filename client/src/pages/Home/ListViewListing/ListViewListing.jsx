@@ -5,14 +5,17 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   getAllVideos,
   selectAllVideos,
+  selectError,
   selectIsLoading,
 } from "../../../app/features/videoSlice";
 import NoVideo from "../NoVideo";
+import WarningError from "../../../component/notFound/WarningError";
 
 const ListViewListing = () => {
   const dispatch = useDispatch();
   const loading = useSelector(selectIsLoading);
   const videos = useSelector(selectAllVideos);
+  const error = useSelector(selectError);
 
   useEffect(() => {
     let ignore = false;
@@ -29,7 +32,11 @@ const ListViewListing = () => {
     };
   }, [dispatch]);
 
-  if (loading) {
+  if (error) {
+    return <WarningError title="Error fetching videos" text={error} />;
+  }
+
+  if (loading && videos?.isNotFetched) {
     return <VideoListSkeleton count={8} />;
   }
 
