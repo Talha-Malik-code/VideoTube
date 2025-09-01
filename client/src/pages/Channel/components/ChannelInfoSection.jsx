@@ -1,15 +1,20 @@
-import React, { useState } from "react";
+import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   selectIsSubscribing,
   toggleSubscription,
+  updateCachedChannelAvatar,
 } from "../../../app/features/channelSlice";
+import {
+  updateAvatarImage,
+  selectIsUpdatingAvatar,
+  selectImageUploadError,
+} from "../../../app/features/userSlice";
 import AButton from "../../../component/AButton";
 import Button from "../../../component/Button";
 import EditIcon from "../../../component/iconComponents/EditIcon";
 import { Link } from "react-router-dom";
 import UploadFileCloudIcon from "../../../component/iconComponents/UploadFileCloudIcon";
-import { updateAvatarImage } from "../../../app/features/userSlice";
 
 const ChannelInfoSection = ({
   username,
@@ -20,22 +25,61 @@ const ChannelInfoSection = ({
 }) => {
   const dispatch = useDispatch();
   const isSubscribing = useSelector(selectIsSubscribing);
+  const isUpdatingAvatar = useSelector(selectIsUpdatingAvatar);
+  const imageUploadError = useSelector(selectImageUploadError);
 
   async function onSubscriptionToggle() {
     await dispatch(toggleSubscription(channelData?._id));
   }
 
-  function handleAvatarFileChange(e) {
+  async function handleAvatarFileChange(e) {
     const file = e.target.files[0];
     if (file) {
-      const formData = new FormData();
-      formData.append("avatar", file);
-      dispatch(updateAvatarImage(formData));
+      // Validate file type
+      const allowedTypes = [
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "image/gif",
+      ];
+      if (!allowedTypes.includes(file.type)) {
+        alert("Please select a valid image file (JPEG, PNG, or GIF)");
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (file.size > maxSize) {
+        alert("File size should not exceed 5MB");
+        return;
+      }
+
+      try {
+        const formData = new FormData();
+        formData.append("avatar", file);
+        const result = await dispatch(updateAvatarImage(formData));
+        if (result.meta.requestStatus === "fulfilled") {
+          dispatch(
+            updateCachedChannelAvatar({
+              username: username,
+              avatar: result.payload.avatar,
+            })
+          );
+        }
+      } catch (error) {
+        console.error("Failed to update avatar:", error);
+      }
     }
   }
 
   return (
     <div className="flex flex-wrap gap-4 pb-4 pt-6">
+      {/* Display error message if avatar upload fails */}
+      {imageUploadError && (
+        <div className="w-full rounded bg-red-100 px-3 py-2 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
+          Error updating avatar: {imageUploadError}
+        </div>
+      )}
       <span className="relative -mt-12 inline-block h-28 w-28 shrink-0 overflow-hidden rounded-full border-2 border-white dark:border-[#e5e7eb]">
         <img src={profileImage} alt="Channel" className="h-full w-full" />
         {isEditable && (
@@ -45,19 +89,53 @@ const ChannelInfoSection = ({
               type="file"
               id="profile-image"
               className="hidden"
+              accept="image/*"
+              disabled={isUpdatingAvatar}
             />
             <label
               htmlFor="profile-image"
-              className="inline-block h-8 w-8 cursor-pointer rounded-lg bg-white/60 p-1 text-[#ae7aff] hover:bg-white"
+              className={`inline-block h-8 w-8 rounded-lg bg-white/60 p-1 text-[#ae7aff] transition-all ${
+                isUpdatingAvatar
+                  ? "cursor-not-allowed opacity-90"
+                  : "cursor-pointer hover:bg-white"
+              }`}
             >
-              <UploadFileCloudIcon />
+              {isUpdatingAvatar ? (
+                <div className="animate-spin">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="w-6 h-6"
+                  >
+                    {/* Top triangle */}
+                    <polygon
+                      points="4,3 20,3 12,12"
+                      fill="rgba(0,0,0,0.1)" // lighter fill
+                      stroke="currentColor"
+                    />
+                    {/* Bottom triangle */}
+                    <polygon
+                      points="4,21 20,21 12,12"
+                      fill="rgba(0,0,0,0.1)" // lighter fill
+                      stroke="currentColor"
+                    />
+                  </svg>
+                </div>
+              ) : (
+                <UploadFileCloudIcon />
+              )}
             </label>
           </div>
         )}
       </span>
       <div className="mr-auto inline-block">
         <h1 className="font-bolg text-xl text-black dark:text-white">
-          React Patterns
+          {channelData?.fullName}
         </h1>
         <p className="text-sm text-gray-400">@{channelData?.username}</p>
         <p className="text-sm text-gray-400">

@@ -117,6 +117,18 @@ const channelSlice = createSlice({
     addUploadedVideo: (state, action) => {
       state.channelData.videos.push(action.payload);
     },
+    updateCachedChannelAvatar: (state, action) => {
+      const { username, avatar } = action.payload;
+      // Update channelData if cached
+      if (state.cache.channelData[username]) {
+        state.cache.channelData[username].data.avatar = avatar;
+        state.cache.channelData[username].timestamp = Date.now();
+      }
+      // Also update current channelData if it’s the same user
+      if (state.channelData.username === username) {
+        state.channelData.avatar = avatar;
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -179,7 +191,8 @@ const channelSlice = createSlice({
   },
 });
 
-export const { cleanChannelData, addUploadedVideo } = channelSlice.actions;
+export const { cleanChannelData, addUploadedVideo, updateCachedChannelAvatar } =
+  channelSlice.actions;
 
 export const selectChannelData = (state) => state.channel.channelData;
 export const selectIsLoading = (state) => state.channel.loading;

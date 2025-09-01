@@ -43,7 +43,7 @@ const ChannelVideoPage = ({ isMyChannel, channelId }) => {
     return <WarningError title="Error fetching videos" text={error} />;
   }
 
-  if (isLoading && channelVideos?.isNotFetched) {
+  if (isLoading || channelVideos?.isNotFetched) {
     return <VideoCardSkeleton count={12} />;
   }
 

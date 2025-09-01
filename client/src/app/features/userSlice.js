@@ -9,6 +9,7 @@ const initialState = {
   isUpdating: false,
   userData: null,
   error: null,
+  imageUploadError: null,
 };
 
 export const registerUser = createAsyncThunk(
@@ -54,7 +55,14 @@ export const updateAvatarImage = createAsyncThunk(
   async (formData, { rejectWithValue }) => {
     try {
       console.log(formData);
-      const data = await updateWithFormData("users/avatar", formData);
+      const data = await updateWithFormData(
+        "users/avatar",
+        formData,
+        {
+          credentials: "include",
+        },
+        "PATCH"
+      );
       return data;
     } catch (error) {
       return rejectWithValue(error.message || "Failed to update avatar");
@@ -145,11 +153,15 @@ const userSlice = createSlice({
       .addCase(updateAvatarImage.fulfilled, (state, action) => {
         state.isUpdatingAvatar = false;
         console.log(action.payload);
-        // state.userData = { ...state.userData, avatar: action.payload };
+        state.imageUploadError = null;
+        // Update user avatar in the state
+        if (state.userData && action.payload.avatar) {
+          state.userData = { ...state.userData, avatar: action.payload.avatar };
+        }
       })
       .addCase(updateAvatarImage.rejected, (state, action) => {
         state.isUpdatingAvatar = false;
-        state.error = action.payload || action.error.message;
+        state.imageUploadError = action.payload || action.error.message;
       });
   },
 });
@@ -158,5 +170,7 @@ export const { clearUser } = userSlice.actions;
 export const selectIsLoggedIn = (state) => state.user.isLoggedIn;
 export const selectUserData = (state) => state.user.userData;
 export const selectError = (state) => state.user.error;
+export const selectIsUpdatingAvatar = (state) => state.user.isUpdatingAvatar;
+export const selectImageUploadError = (state) => state.user.imageUploadError;
 
 export default userSlice.reducer;
