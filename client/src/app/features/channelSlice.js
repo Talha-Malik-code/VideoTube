@@ -129,6 +129,31 @@ const channelSlice = createSlice({
         state.channelData.avatar = avatar;
       }
     },
+    updateCachedChannelCoverImage: (state, action) => {
+      const { username, coverImage } = action.payload;
+
+      if (state.cache.channelData[username]) {
+        state.cache.channelData[username].data.coverImage = coverImage;
+        state.cache.channelData[username].timestamp = Date.now();
+      }
+
+      if (state.channelData.username === username) {
+        state.channelData.coverImage = coverImage;
+      }
+    },
+    updateCachedChannelProfileInfo: (state, action) => {
+      const { username, profileInfo } = action.payload;
+      if (state.cache.channelData[username]) {
+        state.cache.channelData[username].data.fullName = profileInfo.fullName;
+        state.cache.channelData[username].data.email = profileInfo.email;
+        state.cache.channelData[username].timestamp = Date.now();
+      }
+
+      if (state.channelData.username === username) {
+        state.channelData.fullName = profileInfo.fullName;
+        state.channelData.email = profileInfo.email;
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -191,8 +216,13 @@ const channelSlice = createSlice({
   },
 });
 
-export const { cleanChannelData, addUploadedVideo, updateCachedChannelAvatar } =
-  channelSlice.actions;
+export const {
+  cleanChannelData,
+  addUploadedVideo,
+  updateCachedChannelAvatar,
+  updateCachedChannelCoverImage,
+  updateCachedChannelProfileInfo,
+} = channelSlice.actions;
 
 export const selectChannelData = (state) => state.channel.channelData;
 export const selectIsLoading = (state) => state.channel.loading;

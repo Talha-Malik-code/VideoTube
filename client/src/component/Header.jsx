@@ -63,6 +63,8 @@ const Header = () => {
           <input
             className="w-full border border-gray-300 bg-gray-50 py-1 pl-8 pr-3 text-gray-900 placeholder-gray-500 outline-none dark:border-white dark:bg-transparent dark:text-white dark:placeholder-white sm:py-2"
             placeholder="Search"
+            type="search"
+            autoComplete="search"
           />
           <span className="absolute left-2.5 top-1/2 inline-block -translate-y-1/2">
             <SearchIcon className="h-4 w-4 text-gray-500 dark:text-white" />

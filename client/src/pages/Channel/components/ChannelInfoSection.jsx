@@ -101,7 +101,7 @@ const ChannelInfoSection = ({
               }`}
             >
               {isUpdatingAvatar ? (
-                <div className="animate-spin">
+                <div className="animate-spin flex items-center justify-center">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 24 24"

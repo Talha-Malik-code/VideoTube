@@ -14,6 +14,9 @@ import CoverImage from "./components/CoverImage";
 import ChannelInfoSection from "./components/ChannelInfoSection";
 import ToggleBarSection from "./components/ToggleBarSection";
 import ChannelVideoPage from "./subPages/ChannelVideoPage";
+import EditProfileInfoPage from "./subPages/EditProfileInfoPage";
+import EditChannelInfoPage from "./subPages/EditChannelInfoPage";
+import ChangePasswordPage from "./subPages/ChangePasswordPage";
 import { selectUserData } from "../../app/features/userSlice";
 import ChannelNotFound from "../../component/notFound/ChannelNotFound";
 
@@ -67,11 +70,11 @@ const Channel = () => {
 
   if (isEditable) {
     if (subpage === "edit_channel") {
-      subpageComponent = <h1>Edit Channel</h1>;
+      subpageComponent = <EditChannelInfoPage />;
     } else if (subpage === "change_password") {
-      subpageComponent = <h1>Change Password</h1>;
+      subpageComponent = <ChangePasswordPage />;
     } else {
-      subpageComponent = <h1>Edit Profile</h1>;
+      subpageComponent = <EditProfileInfoPage />;
     }
   } else {
     if (subpage === "playlists") {
@@ -92,7 +95,11 @@ const Channel = () => {
 
   return (
     <>
-      <CoverImage coverImage={coverImage} isEditable={isEditable} />
+      <CoverImage
+        username={username}
+        coverImage={coverImage}
+        isEditable={isEditable}
+      />
       <div className="bg-white px-4 pb-4 dark:bg-[#121212]">
         <ChannelInfoSection
           username={username}
@@ -106,9 +113,7 @@ const Channel = () => {
           isEditable={isEditable}
           subpage={subpage}
         />
-        <div className="flex justify-center items-center min-h-[34.2rem] p-4">
-          {subpageComponent}
-        </div>
+        <div className="min-h-[34.2rem] p-4">{subpageComponent}</div>
       </div>
     </>
   );

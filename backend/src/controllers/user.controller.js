@@ -264,28 +264,59 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 });
 
 const updateAccountDetails = asyncHandler(async (req, res) => {
-  const { fullName, email } = req.body;
+  const { fullName, email, username } = req.body;
 
-  if (!fullName || !email) {
-    throw new ApiError(400, "All fields required");
+  if (!fullName && !email && !username) {
+    throw new ApiError(400, "At least one field is required");
   }
 
-  const user = await User.findByIdAndUpdate(
-    req?.user?._id,
-    {
-      $set: {
-        fullName,
-        email,
-      },
-    },
-    {
-      new: true,
+  const user = await User.findById(req?.user?._id);
+
+  // Only check username if it's being updated
+  if (username && user?.username !== username) {
+    const existedUsername = await User.findOne({ username });
+    if (existedUsername) {
+      throw new ApiError(400, "Username already exists");
     }
-  ).select("-password -refreshToken");
+  }
+
+  // const user = await User.findByIdAndUpdate(
+  //   req?.user?._id,
+  //   {
+  //     $set: {
+  //       fullName,
+  //       email,
+  //       username,
+  //     },
+  //   },
+  //   {
+  //     new: true,
+  //   }
+  // ).select("-password -refreshToken");
+
+  if (fullName) {
+    user.fullName = fullName;
+  }
+
+  if (email) {
+    user.email = email;
+  }
+
+  if (username) {
+    user.username = username;
+  }
+
+  await user.save({ validateBeforeSave: false });
+
+  const updatedUser = await User.findById(user._id).select(
+    "-password -refreshToken"
+  );
 
   return res
     .status(200)
-    .json(new ApiResponse(200, user, "Account details updated successfully"));
+    .json(
+      new ApiResponse(200, updatedUser, "Account details updated successfully")
+    );
 });
 
 const updateUserAvatar = asyncHandler(async (req, res) => {

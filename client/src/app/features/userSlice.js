@@ -6,7 +6,7 @@ const initialState = {
   isLoggedIn: false,
   isUpdatingAvatar: false,
   isUpdatingCover: false,
-  isUpdating: false,
+  isUpdatingProfileInfo: false,
   userData: null,
   error: null,
   imageUploadError: null,
@@ -54,7 +54,6 @@ export const updateAvatarImage = createAsyncThunk(
   "user/updateAvatar",
   async (formData, { rejectWithValue }) => {
     try {
-      console.log(formData);
       const data = await updateWithFormData(
         "users/avatar",
         formData,
@@ -66,6 +65,41 @@ export const updateAvatarImage = createAsyncThunk(
       return data;
     } catch (error) {
       return rejectWithValue(error.message || "Failed to update avatar");
+    }
+  }
+);
+
+export const updateCoverImage = createAsyncThunk(
+  "user/updateCoverImage",
+  async (formData, { rejectWithValue }) => {
+    try {
+      const data = await updateWithFormData(
+        "users/cover-image",
+        formData,
+        {
+          credentials: "include",
+        },
+        "PATCH"
+      );
+      return data;
+    } catch (error) {
+      return rejectWithValue(error.message || "Failed to update cover");
+    }
+  }
+);
+
+export const updateProfileInfo = createAsyncThunk(
+  "user/updateProfileInfo",
+  async (profileData, { rejectWithValue }) => {
+    try {
+      const data = await updateData(
+        "users/update-account",
+        profileData,
+        "PATCH"
+      );
+      return data;
+    } catch (error) {
+      return rejectWithValue(error.message || "Failed to update profile info");
     }
   }
 );
@@ -152,7 +186,6 @@ const userSlice = createSlice({
       })
       .addCase(updateAvatarImage.fulfilled, (state, action) => {
         state.isUpdatingAvatar = false;
-        console.log(action.payload);
         state.imageUploadError = null;
         // Update user avatar in the state
         if (state.userData && action.payload.avatar) {
@@ -162,6 +195,35 @@ const userSlice = createSlice({
       .addCase(updateAvatarImage.rejected, (state, action) => {
         state.isUpdatingAvatar = false;
         state.imageUploadError = action.payload || action.error.message;
+      })
+      .addCase(updateCoverImage.pending, (state) => {
+        state.isUpdatingCover = true;
+      })
+      .addCase(updateCoverImage.fulfilled, (state, action) => {
+        state.isUpdatingCover = false;
+        state.imageUploadError = null;
+        // Update user cover iage in the state
+        if (state.userData && action.payload.coverImage) {
+          state.userData = {
+            ...state.userData,
+            coverImage: action.payload.coverImage,
+          };
+        }
+      })
+      .addCase(updateCoverImage.rejected, (state, action) => {
+        state.isUpdatingCover = false;
+        state.imageUploadError = action.payload || action.error.message;
+      })
+      .addCase(updateProfileInfo.pending, (state) => {
+        state.isUpdatingProfileInfo = true;
+      })
+      .addCase(updateProfileInfo.fulfilled, (state, action) => {
+        state.isUpdatingProfileInfo = false;
+        state.userData = action.payload;
+      })
+      .addCase(updateProfileInfo.rejected, (state, action) => {
+        state.isUpdatingProfileInfo = false;
+        state.error = action.payload || action.error.message;
       });
   },
 });
@@ -172,5 +234,8 @@ export const selectUserData = (state) => state.user.userData;
 export const selectError = (state) => state.user.error;
 export const selectIsUpdatingAvatar = (state) => state.user.isUpdatingAvatar;
 export const selectImageUploadError = (state) => state.user.imageUploadError;
+export const selectIsUpdatingCover = (state) => state.user.isUpdatingCover;
+export const selectIsUpdatingProfileInfo = (state) =>
+  state.user.isUpdatingProfileInfo;
 
 export default userSlice.reducer;
