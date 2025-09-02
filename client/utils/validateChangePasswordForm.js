@@ -22,18 +22,19 @@ const validateChangePasswordForm = (formData) => {
     errors.newPassword = "Password must be at least 8 characters.";
   } else if (formData.newPassword.length > 128) {
     errors.newPassword = "Password must be less than 128 characters.";
-  } else if (!/[a-z]/.test(formData.newPassword)) {
-    errors.newPassword = "Password must contain at least one lowercase letter.";
-  } else if (!/[A-Z]/.test(formData.newPassword)) {
-    errors.newPassword = "Password must contain at least one uppercase letter.";
-  } else if (!/[0-9]/.test(formData.newPassword)) {
-    errors.newPassword = "Password must contain at least one number.";
-  } else if (
-    !/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(formData.newPassword)
-  ) {
-    errors.newPassword =
-      "Password must contain at least one special character.";
   }
+  // else if (!/[a-z]/.test(formData.newPassword)) {
+  //   errors.newPassword = "Password must contain at least one lowercase letter.";
+  // } else if (!/[A-Z]/.test(formData.newPassword)) {
+  //   errors.newPassword = "Password must contain at least one uppercase letter.";
+  // } else if (!/[0-9]/.test(formData.newPassword)) {
+  //   errors.newPassword = "Password must contain at least one number.";
+  // } else if (
+  //   !/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(formData.newPassword)
+  // ) {
+  //   errors.newPassword =
+  //     "Password must contain at least one special character.";
+  // }
 
   // Check if new password is same as current password
   if (
@@ -53,21 +54,21 @@ const validateChangePasswordForm = (formData) => {
   }
 
   // Additional security check - ensure passwords are not common patterns
-  const commonPatterns = [
-    /^12345678/,
-    /^password/i,
-    /^qwerty/i,
-    /^abc123/i,
-    /^(.)\\1{7,}/, // repeated characters
-  ];
+  // const commonPatterns = [
+  //   /^12345678/,
+  //   /^password/i,
+  //   /^qwerty/i,
+  //   /^abc123/i,
+  //   /^(.)\\1{7,}/, // repeated characters
+  // ];
 
-  if (
-    formData.newPassword &&
-    commonPatterns.some((pattern) => pattern.test(formData.newPassword))
-  ) {
-    errors.newPassword =
-      "Password is too common. Please choose a more secure password.";
-  }
+  // if (
+  //   formData.newPassword &&
+  //   commonPatterns.some((pattern) => pattern.test(formData.newPassword))
+  // ) {
+  //   errors.newPassword =
+  //     "Password is too common. Please choose a more secure password.";
+  // }
 
   return errors;
 };

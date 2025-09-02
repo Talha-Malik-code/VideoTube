@@ -64,6 +64,11 @@ const EditProfileInfoPage = () => {
 
   const handleCancel = () => {
     console.log("Cancelling profile edit");
+    setFormData({
+      firstName: user?.fullName?.split(" ")[0] || "",
+      lastName: user?.fullName?.split(" ")[1] || "",
+      email: user?.email || "",
+    });
     setErrors({});
     // Reset form to original values if needed
   };

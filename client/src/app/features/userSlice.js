@@ -8,6 +8,7 @@ const initialState = {
   isUpdatingCover: false,
   isUpdatingProfileInfo: false,
   isUpdatingChannelInfo: false,
+  isUpdatingPassword: false,
   userData: null,
   error: null,
   imageUploadError: null,
@@ -113,6 +114,20 @@ export const updateChannelInfo = createAsyncThunk(
       return data;
     } catch (error) {
       return rejectWithValue(error.message || "Failed to update channel info");
+    }
+  }
+);
+
+export const updatePassword = createAsyncThunk(
+  "user/updatePassword",
+  async (newData, { rejectWithValue }) => {
+    try {
+      const data = await updateData("users/change-password", newData, "POST");
+      console.log("updatePassword.fulfilled", data);
+
+      return data;
+    } catch (error) {
+      return rejectWithValue(error.message || "Failed to update password");
     }
   }
 );
@@ -246,9 +261,21 @@ const userSlice = createSlice({
 
         state.isUpdatingChannelInfo = false;
         state.userData = action.payload;
+        state.error = null;
       })
       .addCase(updateChannelInfo.rejected, (state, action) => {
         state.isUpdatingChannelInfo = false;
+        state.error = action.payload || action.error.message;
+      })
+      .addCase(updatePassword.pending, (state) => {
+        state.isUpdatingPassword = true;
+      })
+      .addCase(updatePassword.fulfilled, (state) => {
+        state.isUpdatingPassword = false;
+        state.error = null;
+      })
+      .addCase(updatePassword.rejected, (state, action) => {
+        state.isUpdatingPassword = false;
         state.error = action.payload || action.error.message;
       });
   },

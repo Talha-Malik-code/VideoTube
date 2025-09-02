@@ -5,8 +5,12 @@ import Input from "../../../component/form/Input";
 import Button from "../../../component/Button";
 import CancelButton from "../../../component/CancelButton";
 import { validateChangePasswordForm } from "../../../../utils/validateChangePasswordForm";
+import { updatePassword } from "../../../app/features/userSlice";
+import NewToast from "../../../component/toasts/Toast";
+import { useDispatch } from "react-redux";
 
 const ChangePasswordPage = () => {
+  const dispatch = useDispatch();
   const [formData, setFormData] = useState({
     currentPassword: "",
     newPassword: "",
@@ -30,7 +34,7 @@ const ChangePasswordPage = () => {
     }
   };
 
-  const handleUpdatePassword = () => {
+  const handleUpdatePassword = async () => {
     const validationErrors = validateChangePasswordForm(formData);
 
     if (Object.keys(validationErrors).length > 0) {
@@ -39,18 +43,37 @@ const ChangePasswordPage = () => {
     }
 
     setErrors({});
-    console.log("Updating password");
-    // Handle password update logic here
+    const updateData = {
+      oldPassword: formData.currentPassword,
+      newPassword: formData.newPassword,
+    };
+
+    const result = await dispatch(updatePassword(updateData));
+    if (result.meta.requestStatus === "fulfilled") {
+      NewToast("success", "Password updated successfully");
+      setFormData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+      setErrors({});
+    } else {
+      setErrors({ currentPassword: result.payload });
+    }
   };
 
   const handleCancel = () => {
-    console.log("Cancelling password change");
+    // Clear all password fields (for security)
     setFormData({
       currentPassword: "",
       newPassword: "",
       confirmPassword: "",
     });
+
+    // Clear any validation errors
     setErrors({});
+
+    console.log("Password change cancelled - form cleared for security");
   };
 
   const footer = (

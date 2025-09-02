@@ -12,7 +12,6 @@ import { timezoneOptions } from "../../../data/timezones";
 import { validateEditChannelForm } from "../../../../utils/validateEditChannelForm";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  selectError,
   selectIsUpdatingChannelInfo,
   selectUserData,
   updateChannelInfo,
@@ -24,7 +23,6 @@ const EditChannelInfoPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const user = useSelector(selectUserData);
-  const error = useSelector(selectError);
   const isUpdatingChannelInfo = useSelector(selectIsUpdatingChannelInfo);
   const [formData, setFormData] = useState({
     username: user?.username,
@@ -72,14 +70,25 @@ const EditChannelInfoPage = () => {
       );
       navigate(`/channel/${formData.username}?edit=true&subpage=edit_channel`);
     } else {
-      setErrors({ username: error });
+      // Extract error from the rejected action
+      const errorMessage = newInfo.payload || "Failed to update channel info";
+      setErrors({ username: errorMessage });
     }
   };
 
   const handleCancel = () => {
-    console.log("Cancelling channel edit");
+    // Reset form to original channel data
+    setFormData({
+      username: user?.username || "",
+      description: user?.description || "",
+      fontWeight: user?.fontWeight || "regular",
+      timezone: user?.timezone || "UTC-12:00",
+    });
+
+    // Clear any validation errors
     setErrors({});
-    // Reset form to original values if needed
+
+    console.log("Channel info edit cancelled - form reset to original values");
   };
 
   const handleToolbarAction = (action) => {
