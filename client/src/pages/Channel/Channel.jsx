@@ -19,6 +19,9 @@ import EditChannelInfoPage from "./subPages/EditChannelInfoPage";
 import ChangePasswordPage from "./subPages/ChangePasswordPage";
 import { selectUserData } from "../../app/features/userSlice";
 import ChannelNotFound from "../../component/notFound/ChannelNotFound";
+import ChannelPlaylistPage from "./subPages/ChannelPlaylistPage";
+import ChannelSubscribedListPage from "./subPages/ChannelSubscribedListPage";
+import ChannelTweetsPage from "./subPages/ChannelTweetsPage";
 
 const Channel = () => {
   const dispatch = useDispatch();
@@ -78,11 +81,11 @@ const Channel = () => {
     }
   } else {
     if (subpage === "playlists") {
-      subpageComponent = <h1>Playlists</h1>;
+      subpageComponent = <ChannelPlaylistPage />;
     } else if (subpage === "tweets") {
-      subpageComponent = <h1>Tweets</h1>;
+      subpageComponent = <ChannelTweetsPage />;
     } else if (subpage === "subscribed") {
-      subpageComponent = <h1>Subscribed Channels</h1>;
+      subpageComponent = <ChannelSubscribedListPage />;
     } else {
       subpageComponent = (
         <ChannelVideoPage

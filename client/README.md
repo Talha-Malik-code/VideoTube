@@ -17,3 +17,4 @@ If you are developing a production application, we recommend using TypeScript wi
     2. Nested Comment.
     3. Seperate the likeSlice and dislikeSlice from the videoSlice
     4. Comments fetching.
+    5. Cancel the uploading video.

@@ -1,6 +1,6 @@
 import React from "react";
 
-const ChannelAvatar = ({ src, alt, size = 40, className = "" }) => {
+const ChannelAvatar = ({ src, alt, size = 40, className = "", onClick }) => {
   const dimensionClass =
     typeof size === "number" ? `h-[${size}px] w-[${size}px]` : size;
   return (
@@ -10,6 +10,7 @@ const ChannelAvatar = ({ src, alt, size = 40, className = "" }) => {
         height: typeof size === "number" ? `${size}px` : undefined,
         width: typeof size === "number" ? `${size}px` : undefined,
       }}
+      onClick={onClick}
     >
       <img
         src={src}

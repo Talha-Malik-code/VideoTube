@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import VideoTitle from "../videoComponents/VideoTitle";
 import VideoDetails from "../videoComponents/VideoDetails";
 import ChannelAvatar from "../videoComponents/ChannelAvatar";
@@ -16,6 +16,15 @@ const CardVideo = ({
   const navigate = useNavigate();
   const goToVideo = () =>
     navigate(`/video/${_id || encodeURIComponent(title)}`);
+  const goToChannel = () => navigate(`/channel/${owner.username}`);
+
+  // check if the user is on channel page
+  const isChannelPage = useLocation().pathname.includes("/channel/");
+
+  function handleChannelClick(e) {
+    e.stopPropagation();
+    goToChannel();
+  }
 
   return (
     <div
@@ -38,12 +47,21 @@ const CardVideo = ({
         ) : null}
       </div>
       <div className="flex gap-x-2">
-        <ChannelAvatar src={owner.avatar} alt={owner.fullName} size={40} />
+        {!isChannelPage && (
+          <ChannelAvatar
+            onClick={handleChannelClick}
+            src={owner.avatar}
+            alt={owner.fullName}
+            size={40}
+          />
+        )}
         <div className="w-full">
           <VideoTitle title={title} className="mb-1" />
-          <p className="text-sm text-gray-600 dark:text-gray-200">
-            {owner.fullName}
-          </p>
+          {!isChannelPage && (
+            <p className="text-sm text-gray-600 dark:text-gray-200">
+              {owner.fullName}
+            </p>
+          )}
           <VideoDetails createdAt={createdAt} views={views} />
         </div>
       </div>
