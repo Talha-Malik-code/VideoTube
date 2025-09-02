@@ -108,6 +108,7 @@ const channelSlice = createSlice({
     cleanChannelData: (state) => {
       state.channelData = initialState.channelData;
       state.channelVideos = initialState.channelVideos;
+      state.isUpdatingChannelInfo = false;
       state.channelVideosLoading = false;
       state.channelVideosError = null;
       state.loading = false;
@@ -152,6 +153,17 @@ const channelSlice = createSlice({
       if (state.channelData.username === username) {
         state.channelData.fullName = profileInfo.fullName;
         state.channelData.email = profileInfo.email;
+      }
+    },
+    updateCachedChannelChannelInfo: (state, action) => {
+      const { username, newUsername } = action.payload;
+      if (state.cache.channelData[username]) {
+        state.cache.channelData[username].data.username = newUsername;
+        state.cache.channelData[username].timestamp = Date.now();
+      }
+
+      if (state.channelData.username === username) {
+        state.channelData.username = newUsername;
       }
     },
   },
@@ -222,6 +234,7 @@ export const {
   updateCachedChannelAvatar,
   updateCachedChannelCoverImage,
   updateCachedChannelProfileInfo,
+  updateCachedChannelChannelInfo,
 } = channelSlice.actions;
 
 export const selectChannelData = (state) => state.channel.channelData;

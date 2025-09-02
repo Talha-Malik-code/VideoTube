@@ -37,19 +37,19 @@ const validateEditChannelForm = (formData) => {
   // }
 
   // Validate fontWeight
-  const validFontWeights = ["light", "regular", "semi-bold", "bold", "bolder"];
-  if (!formData.fontWeight) {
-    errors.fontWeight = "Font weight is required.";
-  } else if (!validFontWeights.includes(formData.fontWeight)) {
-    errors.fontWeight = "Please select a valid font weight.";
-  }
+  // const validFontWeights = ["light", "regular", "semi-bold", "bold", "bolder"];
+  // if (!formData.fontWeight) {
+  //   errors.fontWeight = "Font weight is required.";
+  // } else if (!validFontWeights.includes(formData.fontWeight)) {
+  //   errors.fontWeight = "Please select a valid font weight.";
+  // }
 
   // Validate timezone
-  if (!formData.timezone?.trim()) {
-    errors.timezone = "Timezone is required.";
-  } else if (!/^UTC[+-]\d{2}:\d{2}$/.test(formData.timezone)) {
-    errors.timezone = "Please select a valid timezone.";
-  }
+  // if (!formData.timezone?.trim()) {
+  //   errors.timezone = "Timezone is required.";
+  // } else if (!/^UTC[+-]\d{2}:\d{2}$/.test(formData.timezone)) {
+  //   errors.timezone = "Please select a valid timezone.";
+  // }
 
   return errors;
 };

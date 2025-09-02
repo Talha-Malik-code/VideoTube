@@ -108,8 +108,23 @@ class FrontendError extends Error {
       parsedData = JSON.parse(responseText);
       message = parsedData.message || message;
     } catch (e) {
-      // If response is not JSON, use status text or response text
-      message = response?.statusText || responseText || message;
+      // If response is not JSON, try to extract error from HTML
+      if (responseText && responseText.includes("<pre>")) {
+        const htmlMatch = responseText.match(/<pre>([^<]+)<br>/);
+        if (htmlMatch && htmlMatch[1]) {
+          // Extract just the error message part
+          const errorPart = htmlMatch[1];
+          if (errorPart.includes("Error: ")) {
+            message = errorPart.split("Error: ")[1] || message;
+          } else {
+            message = errorPart;
+          }
+        } else {
+          message = response?.statusText || "Server error occurred";
+        }
+      } else {
+        message = response?.statusText || responseText || message;
+      }
     }
 
     // Determine error type based on status code
@@ -164,13 +179,17 @@ class FrontendError extends Error {
       case "NETWORK_ERROR":
         return "Unable to connect to server. Please check your internet connection and try again.";
       case "AUTH_ERROR":
-        return "Please log in to continue.";
+        return this.message || "Please log in to continue.";
       case "FORBIDDEN_ERROR":
-        return "You don't have permission to perform this action.";
+        return (
+          this.message || "You don't have permission to perform this action."
+        );
       case "NOT_FOUND_ERROR":
-        return "The requested resource was not found.";
+        return this.message || "The requested resource was not found.";
       case "VALIDATION_ERROR":
         return this.message || "Please check your input and try again.";
+      case "CLIENT_ERROR":
+        return this.message || "Bad request. Please check your input.";
       case "SERVER_ERROR":
         if (this.statusCode >= 500) {
           return "Server is temporarily unavailable. Please try again later.";

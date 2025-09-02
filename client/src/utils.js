@@ -25,7 +25,6 @@ async function updateWithFormData(
         response,
         errorText
       );
-      NewToast("error", frontendError.getUserMessage());
       throw frontendError;
     }
 
@@ -42,7 +41,6 @@ async function updateWithFormData(
         null,
         { responseData: data }
       );
-      NewToast("error", error.getUserMessage());
       throw error;
     }
   } catch (error) {
@@ -58,7 +56,6 @@ async function updateWithFormData(
       "Unable to connect to server. Please check your connection.",
       error
     );
-    NewToast("error", networkError.getUserMessage());
     throw networkError;
   }
 }
@@ -76,7 +73,6 @@ async function fetchData(path, header = {}) {
       const errorText = await res.text();
       console.error("Server error:", res.status, errorText);
       const frontendError = FrontendError.fromServerResponse(res, errorText);
-      NewToast("error", frontendError.getUserMessage());
       throw frontendError;
     }
 
@@ -95,7 +91,6 @@ async function fetchData(path, header = {}) {
         null,
         { responseData: data }
       );
-      NewToast("error", error.getUserMessage());
       throw error;
     }
   } catch (error) {
@@ -111,7 +106,6 @@ async function fetchData(path, header = {}) {
       "Unable to connect to server. Please check your connection.",
       error
     );
-    NewToast("warn", networkError.getUserMessage());
     throw networkError;
   }
 }
@@ -132,7 +126,6 @@ async function updateData(path, content, methodType = "PATCH") {
       const errorText = await res.text();
       console.error("Server error:", res.status, errorText);
       const frontendError = FrontendError.fromServerResponse(res, errorText);
-      NewToast("error", frontendError.getUserMessage());
       throw frontendError;
     }
 
@@ -150,7 +143,6 @@ async function updateData(path, content, methodType = "PATCH") {
         null,
         { responseData: data }
       );
-      NewToast("error", error.getUserMessage());
       throw error;
     }
   } catch (error) {
@@ -166,7 +158,6 @@ async function updateData(path, content, methodType = "PATCH") {
       "Unable to connect to server. Please check your connection.",
       error
     );
-    NewToast("warn", networkError.getUserMessage());
     throw networkError;
   }
 }

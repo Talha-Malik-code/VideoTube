@@ -7,6 +7,7 @@ const initialState = {
   isUpdatingAvatar: false,
   isUpdatingCover: false,
   isUpdatingProfileInfo: false,
+  isUpdatingChannelInfo: false,
   userData: null,
   error: null,
   imageUploadError: null,
@@ -100,6 +101,18 @@ export const updateProfileInfo = createAsyncThunk(
       return data;
     } catch (error) {
       return rejectWithValue(error.message || "Failed to update profile info");
+    }
+  }
+);
+
+export const updateChannelInfo = createAsyncThunk(
+  "user/updateChannelInfo",
+  async (newData, { rejectWithValue }) => {
+    try {
+      const data = await updateData("users/update-account", newData, "PATCH");
+      return data;
+    } catch (error) {
+      return rejectWithValue(error.message || "Failed to update channel info");
     }
   }
 );
@@ -224,6 +237,19 @@ const userSlice = createSlice({
       .addCase(updateProfileInfo.rejected, (state, action) => {
         state.isUpdatingProfileInfo = false;
         state.error = action.payload || action.error.message;
+      })
+      .addCase(updateChannelInfo.pending, (state) => {
+        state.isUpdatingChannelInfo = true;
+      })
+      .addCase(updateChannelInfo.fulfilled, (state, action) => {
+        console.log("updateChannelInfo.fulfilled", action.payload);
+
+        state.isUpdatingChannelInfo = false;
+        state.userData = action.payload;
+      })
+      .addCase(updateChannelInfo.rejected, (state, action) => {
+        state.isUpdatingChannelInfo = false;
+        state.error = action.payload || action.error.message;
       });
   },
 });
@@ -237,5 +263,7 @@ export const selectImageUploadError = (state) => state.user.imageUploadError;
 export const selectIsUpdatingCover = (state) => state.user.isUpdatingCover;
 export const selectIsUpdatingProfileInfo = (state) =>
   state.user.isUpdatingProfileInfo;
+export const selectIsUpdatingChannelInfo = (state) =>
+  state.user.isUpdatingChannelInfo;
 
 export default userSlice.reducer;

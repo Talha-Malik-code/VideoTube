@@ -10,14 +10,27 @@ import TextEditorToolbar from "../../../component/form/TextEditorToolbar";
 import ClockIcon from "../../../component/iconComponents/ClockIcon";
 import { timezoneOptions } from "../../../data/timezones";
 import { validateEditChannelForm } from "../../../../utils/validateEditChannelForm";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  selectError,
+  selectIsUpdatingChannelInfo,
+  selectUserData,
+  updateChannelInfo,
+} from "../../../app/features/userSlice";
+import { updateCachedChannelChannelInfo } from "../../../app/features/channelSlice";
+import { useNavigate } from "react-router-dom";
 
 const EditChannelInfoPage = () => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const user = useSelector(selectUserData);
+  const error = useSelector(selectError);
+  const isUpdatingChannelInfo = useSelector(selectIsUpdatingChannelInfo);
   const [formData, setFormData] = useState({
-    username: "reactpatterns",
-    description:
-      "I'm a Product Designer based in Melbourne, Australia. I specialise in UX/UI design, brand strategy, and Webflow development.",
+    username: user?.username,
+    description: user?.description,
     fontWeight: "regular",
-    timezone: "UTC+05:30",
+    timezone: "UTC-12:00",
   });
 
   const [errors, setErrors] = useState({});
@@ -37,7 +50,7 @@ const EditChannelInfoPage = () => {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const validationErrors = validateEditChannelForm(formData);
 
     if (Object.keys(validationErrors).length > 0) {
@@ -46,8 +59,21 @@ const EditChannelInfoPage = () => {
     }
 
     setErrors({});
-    console.log("Saving channel info:", formData);
-    // Handle save logic here
+    const oldUsername = user.username;
+    const newInfo = await dispatch(
+      updateChannelInfo({ username: formData.username })
+    );
+    if (newInfo.meta.requestStatus === "fulfilled") {
+      dispatch(
+        updateCachedChannelChannelInfo({
+          username: oldUsername,
+          newUsername: formData.username,
+        })
+      );
+      navigate(`/channel/${formData.username}?edit=true&subpage=edit_channel`);
+    } else {
+      setErrors({ username: error });
+    }
   };
 
   const handleCancel = () => {
@@ -61,18 +87,21 @@ const EditChannelInfoPage = () => {
     // Handle text formatting actions
   };
 
-  const remainingChars = 275 - formData.description.length;
+  // const remainingChars = 275 - formData.description.length;
 
   const footer = (
     <>
       <CancelButton onClick={handleCancel}>Cancel</CancelButton>
       <Button
-        bgColor="bg-[#ae7aff]"
-        textColor="text-black"
-        className="px-3 py-1.5"
+        className={`px-3 py-1.5 ${
+          isUpdatingChannelInfo
+            ? "dark:bg-[#9d6aee] bg-[#ae7aff] cursor-not-allowed"
+            : ""
+        }`}
         onClick={handleSave}
+        disabled={isUpdatingChannelInfo || user?.username === formData.username}
       >
-        Save changes
+        {isUpdatingChannelInfo ? "Saving..." : "Save changes"}
       </Button>
     </>
   );
@@ -89,7 +118,7 @@ const EditChannelInfoPage = () => {
           placeholder="@username"
           value={formData.username}
           onChange={(e) => handleInputChange("username", e.target.value)}
-          prefix="vidplay.com/"
+          prefix="vidtube.com/"
           error={errors.username}
         />
 
@@ -103,6 +132,7 @@ const EditChannelInfoPage = () => {
           maxLength={275}
           showCharCount={true}
           error={errors.description}
+          disabled={true}
         />
 
         <TextEditorToolbar
@@ -126,6 +156,9 @@ const EditChannelInfoPage = () => {
           icon={ClockIcon}
           error={errors.timezone}
         />
+        <p className="text-center text-sm text-gray-600 dark:text-gray-300">
+          Note: Change username to save changes
+        </p>
       </FormCard>
     </FormPage>
   );
