@@ -13,6 +13,7 @@ const initialState = {
 // Default state objects to ensure stable references
 const defaultLikeState = { isLiked: false, likeCount: 0 };
 const defaultCommentLikeState = { isLiked: false, likeCount: 0 };
+const defaultTweetLikeState = { isLiked: false, likeCount: 0 };
 
 export const toggleVideoLike = createAsyncThunk(
   "like/toggleVideoLike",
@@ -83,6 +84,12 @@ const likeSlice = createSlice({
         state.commentLikes[commentId] = { isLiked, likeCount };
       }
     },
+    initializeTweetLikeState: (state, action) => {
+      const { tweetId, isLiked, likeCount } = action.payload;
+      if (!state.tweetLikes[tweetId]) {
+        state.tweetLikes[tweetId] = { isLiked, likeCount };
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -146,6 +153,7 @@ export const {
   setCommentLikeState,
   initializeVideoLikeState,
   initializeCommentLikeState,
+  initializeTweetLikeState,
 } = likeSlice.actions;
 
 // Memoized selectors with stable references
@@ -170,7 +178,7 @@ export const selectTweetLikeState = (state, tweetId) => {
   if (likeState) {
     return likeState;
   }
-  return defaultLikeState;
+  return defaultTweetLikeState;
 };
 
 export const selectIsLiking = (state) => state.like.isLiking;

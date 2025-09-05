@@ -9,8 +9,8 @@ export const searchTweets = (tweets, searchTerm) => {
   return tweets.filter(
     (tweet) =>
       tweet.content.toLowerCase().includes(searchLower) ||
-      tweet.author.fullName.toLowerCase().includes(searchLower) ||
-      tweet.author.username.toLowerCase().includes(searchLower)
+      tweet.owner?.fullName.toLowerCase().includes(searchLower) ||
+      tweet.owner.username.toLowerCase().includes(searchLower)
   );
 };
 
@@ -33,10 +33,10 @@ export const filterTweets = (tweets, filters = {}) => {
     );
   }
 
-  // Filter by author
-  if (filters.authorId) {
+  // Filter by owner
+  if (filters.ownerId) {
     filteredTweets = filteredTweets.filter(
-      (tweet) => tweet.author._id === filters.authorId
+      (tweet) => tweet.owner?._id === filters.ownerId
     );
   }
 
@@ -78,9 +78,9 @@ export const sortTweets = (tweets, sortBy = "newest") => {
     case "most_disliked":
       return sortedTweets.sort((a, b) => b.dislikeCount - a.dislikeCount);
 
-    case "author_name":
+    case "owner_name":
       return sortedTweets.sort((a, b) =>
-        a.author.fullName.localeCompare(b.author.fullName)
+        a.owner?.fullName.localeCompare(b.owner?.fullName)
       );
 
     default:

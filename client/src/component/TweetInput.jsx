@@ -1,24 +1,25 @@
 import React, { useState } from "react";
 import Button from "./Button";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  createChannelTweet,
+  selectIsCreatingTweet,
+} from "../app/features/channelSlice";
 
-const TweetInput = ({ onSubmit, className = "" }) => {
+const TweetInput = ({ className = "" }) => {
+  const dispatch = useDispatch();
+  const isCreatingTweet = useSelector(selectIsCreatingTweet);
   const [tweetContent, setTweetContent] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!tweetContent.trim()) return;
 
     try {
-      setIsSubmitting(true);
-      if (onSubmit) {
-        await onSubmit(tweetContent);
-        setTweetContent(""); // Clear input after successful submission
-      }
+      dispatch(createChannelTweet(tweetContent));
+      setTweetContent("");
     } catch (error) {
       console.error("Error submitting tweet:", error);
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -39,7 +40,7 @@ const TweetInput = ({ onSubmit, className = "" }) => {
           onChange={(e) => setTweetContent(e.target.value)}
           onKeyDown={handleKeyDown}
           maxLength={280}
-          disabled={isSubmitting}
+          disabled={isCreatingTweet}
         />
         <div className="flex items-center justify-end gap-x-3 px-3">
           <button
@@ -84,10 +85,10 @@ const TweetInput = ({ onSubmit, className = "" }) => {
           </button>
           <Button
             type="submit"
-            disabled={!tweetContent.trim() || isSubmitting}
+            disabled={!tweetContent.trim() || isCreatingTweet}
             className="px-3 py-2 font-semibold text-black disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isSubmitting ? "Sending..." : "Send"}
+            {isCreatingTweet ? "Sending..." : "Send"}
           </Button>
         </div>
       </form>

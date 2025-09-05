@@ -32,15 +32,35 @@ const initialState = {
     isNotFetched: true,
   },
 
+  channelTweets: {
+    docs: [],
+    pagination: {
+      totalDocs: 0,
+      limit: 10,
+      page: 1,
+      totalPages: 1,
+      pagingCounter: 1,
+      hasPrevPage: false,
+      hasNextPage: false,
+      prevPage: null,
+      nextPage: null,
+    },
+    isNotFetched: true,
+  },
+
   channelVideosLoading: false,
   channelVideosError: null,
   loading: false,
   error: null,
   isSubscribing: false,
+  channelTweetsLoading: false,
+  channelTweetsError: null,
+  isCreatingTweet: false,
 
   cache: {
     channelData: {}, // { username: { data, timestamp } }
     channelVideos: {}, // { channelId: { data, timestamp, queryKey } }
+    channelTweets: {}, // { channelId: { data, timestamp } }
   },
 };
 
@@ -64,7 +84,7 @@ export const getChannelData = createAsyncThunk(
 );
 
 export const getChannelVideos = createAsyncThunk(
-  "video/getChannelVideos",
+  "channel/getChannelVideos",
   async (
     { channelId, query = { page: 1, limit: 10 } } = {},
     { getState, rejectWithValue }
@@ -89,8 +109,38 @@ export const getChannelVideos = createAsyncThunk(
   }
 );
 
+export const getChannelTweets = createAsyncThunk(
+  "channel/getChannelTweets",
+  async (channelId, { getState, rejectWithValue }) => {
+    try {
+      const { cache } = getState().channel;
+      const cached = cache.channelTweets[channelId];
+
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        return { data: cached.data, cacheKey: channelId, fromApi: false };
+      }
+      const data = await fetchData(`tweet/user/${channelId}`);
+      return { data, cacheKey: channelId, fromApi: true };
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const createChannelTweet = createAsyncThunk(
+  "channel/createNewTweet",
+  async (content, { rejectWithValue }) => {
+    try {
+      const data = await updateData("tweet", { content }, "POST");
+      return data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
 export const toggleSubscription = createAsyncThunk(
-  "video/toggleSubscription",
+  "channel/toggleSubscription",
   async (id, { rejectWithValue }) => {
     try {
       const data = await updateData(`sub/c/${id}`, {}, "POST");
@@ -108,9 +158,13 @@ const channelSlice = createSlice({
     cleanChannelData: (state) => {
       state.channelData = initialState.channelData;
       state.channelVideos = initialState.channelVideos;
+      state.channelTweets = initialState.channelTweets;
       state.isUpdatingChannelInfo = false;
       state.channelVideosLoading = false;
       state.channelVideosError = null;
+      state.channelTweetsLoading = false;
+      state.channelTweetsError = null;
+      state.isCreatingTweet = false;
       state.loading = false;
       state.error = null;
       state.cache = initialState.cache;
@@ -212,6 +266,53 @@ const channelSlice = createSlice({
         state.channelVideosError = action.payload || action.error.message;
         state.channelVideosLoading = false;
       })
+      .addCase(getChannelTweets.pending, (state) => {
+        state.channelTweetsLoading = true;
+      })
+      .addCase(getChannelTweets.fulfilled, (state, action) => {
+        const { data, cacheKey, fromApi } = action.payload;
+        state.channelTweets = data;
+        state.channelTweetsLoading = false;
+        state.channelTweetsError = null;
+        if (fromApi) {
+          state.cache.channelTweets[cacheKey] = {
+            data,
+            timestamp: Date.now(),
+          };
+        }
+      })
+      .addCase(getChannelTweets.rejected, (state, action) => {
+        state.channelTweetsError = action.payload || action.error.message;
+        state.channelTweetsLoading = false;
+      })
+      .addCase(createChannelTweet.pending, (state) => {
+        state.isCreatingTweet = true;
+      })
+      .addCase(createChannelTweet.fulfilled, (state, action) => {
+        state.isCreatingTweet = false;
+        state.error = null;
+        const newTweet = {
+          ...action.payload,
+          likesCount: 0,
+          dislikesCount: 0,
+          isLiked: false,
+          isDisliked: false,
+        };
+
+        state.channelTweets.docs.unshift(newTweet);
+
+        if (state.cache.channelTweets[state.channelData._id]) {
+          state.cache.channelTweets[state.channelData._id].data.docs.unshift(
+            newTweet
+          );
+          state.cache.channelTweets[state.channelData._id].timestamp =
+            Date.now();
+        }
+      })
+      .addCase(createChannelTweet.rejected, (state, action) => {
+        state.isCreatingTweet = false;
+        state.error = action.payload || action.error.message;
+      })
       .addCase(toggleSubscription.pending, (state) => {
         state.isSubscribing = true;
       })
@@ -246,5 +347,11 @@ export const selectChannelVideosError = (state) =>
 export const selectIsSubscribing = (state) => state.channel.isSubscribing;
 export const selectChannelVideos = (state) => state.channel.channelVideos;
 export const selectError = (state) => state.channel.error;
+export const selectChannelTweetsLoading = (state) =>
+  state.channel.channelTweetsLoading;
+export const selectChannelTweetsError = (state) =>
+  state.channel.channelTweetsError;
+export const selectChannelTweets = (state) => state.channel.channelTweets;
+export const selectIsCreatingTweet = (state) => state.channel.isCreatingTweet;
 
 export default channelSlice.reducer;
