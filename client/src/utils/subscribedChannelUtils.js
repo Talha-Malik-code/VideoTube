@@ -6,11 +6,18 @@ export const searchSubscribedChannels = (channels, searchTerm) => {
 
   const searchLower = searchTerm.toLowerCase().trim();
 
-  return channels.filter(
-    (channel) =>
+  return channels.filter((channelItem) => {
+    // Handle the nested structure: channelItem.subscribedChannel
+    const channel = channelItem.subscribedChannel || channelItem;
+
+    // Check if channel and its properties exist
+    if (!channel || !channel.fullName || !channel.username) return false;
+
+    return (
       channel.fullName.toLowerCase().includes(searchLower) ||
       channel.username.toLowerCase().includes(searchLower)
-  );
+    );
+  });
 };
 
 export const filterSubscribedChannels = (channels, filters = {}) => {
@@ -48,35 +55,47 @@ export const sortSubscribedChannels = (channels, sortBy = "name") => {
 
   switch (sortBy) {
     case "name":
-      return sortedChannels.sort((a, b) =>
-        a.fullName.localeCompare(b.fullName)
-      );
+      return sortedChannels.sort((a, b) => {
+        const channelA = a.subscribedChannel || a;
+        const channelB = b.subscribedChannel || b;
+        return channelA.fullName.localeCompare(channelB.fullName);
+      });
 
     case "username":
-      return sortedChannels.sort((a, b) =>
-        a.username.localeCompare(b.username)
-      );
+      return sortedChannels.sort((a, b) => {
+        const channelA = a.subscribedChannel || a;
+        const channelB = b.subscribedChannel || b;
+        return channelA.username.localeCompare(channelB.username);
+      });
 
     case "subscribers_high":
-      return sortedChannels.sort(
-        (a, b) => b.subscriberCount - a.subscriberCount
-      );
+      return sortedChannels.sort((a, b) => {
+        const channelA = a.subscribedChannel || a;
+        const channelB = b.subscribedChannel || b;
+        return channelB.subscriberCount - channelA.subscriberCount;
+      });
 
     case "subscribers_low":
-      return sortedChannels.sort(
-        (a, b) => a.subscriberCount - b.subscriberCount
-      );
+      return sortedChannels.sort((a, b) => {
+        const channelA = a.subscribedChannel || a;
+        const channelB = b.subscribedChannel || b;
+        return channelA.subscriberCount - channelB.subscriberCount;
+      });
 
     case "subscribed_first":
       return sortedChannels.sort((a, b) => {
-        if (a.isSubscribed === b.isSubscribed) return 0;
-        return a.isSubscribed ? -1 : 1;
+        const channelA = a.subscribedChannel || a;
+        const channelB = b.subscribedChannel || b;
+        if (channelA.isSubscribed === channelB.isSubscribed) return 0;
+        return channelA.isSubscribed ? -1 : 1;
       });
 
     case "unsubscribed_first":
       return sortedChannels.sort((a, b) => {
-        if (a.isSubscribed === b.isSubscribed) return 0;
-        return a.isSubscribed ? 1 : -1;
+        const channelA = a.subscribedChannel || a;
+        const channelB = b.subscribedChannel || b;
+        if (channelA.isSubscribed === channelB.isSubscribed) return 0;
+        return channelA.isSubscribed ? 1 : -1;
       });
 
     default:
@@ -118,4 +137,16 @@ export const calculateSubscribedChannelStats = (channels) => {
 export const getSubscribedChannelCount = (channels) => {
   if (!channels || !Array.isArray(channels)) return 0;
   return channels.filter((channel) => channel.isSubscribed).length;
+};
+
+export const setFilteredChannels = (channels, searchTerm, sortBy = "name") => {
+  if (!channels || !Array.isArray(channels)) return [];
+
+  // First search/filter the channels
+  let filtered = searchSubscribedChannels(channels, searchTerm);
+
+  // Then sort the filtered results
+  filtered = sortSubscribedChannels(filtered, sortBy);
+
+  return filtered;
 };

@@ -1,85 +1,69 @@
 import React, { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { selectUserData } from "../../../app/features/userSlice";
-import { selectChannelData } from "../../../app/features/channelSlice";
+import {
+  getSubscribedChannels,
+  selectChannelData,
+  selectSubscribedChannels,
+  selectSubscribedChannelsError,
+  selectSubscribedChannelsLoading,
+} from "../../../app/features/channelSlice";
 import SubscribedChannelHeader from "../../../component/SubscribedChannelHeader";
 import SearchBar from "../../../component/SearchBar";
 import SubscribedChannelList from "../../../component/SubscribedChannelList";
-import { sampleSubscribedChannels } from "../../../data/sampleSubscribedChannels";
 import {
   searchSubscribedChannels,
   sortSubscribedChannels,
-  // calculateSubscribedChannelStats,
-  getSubscribedChannelCount,
 } from "../../../utils/subscribedChannelUtils";
 
 const ChannelSubscribedListPage = () => {
+  const dispatch = useDispatch();
   const user = useSelector(selectUserData);
   const channelData = useSelector(selectChannelData);
-  const [channels, setChannels] = useState([]);
+  const { subscribedChannels, subscribedCount } = useSelector(
+    selectSubscribedChannels
+  );
+  const subscribedChannelsLoading = useSelector(
+    selectSubscribedChannelsLoading
+  );
+  const subscribedChannelsError = useSelector(selectSubscribedChannelsError);
   const [filteredChannels, setFilteredChannels] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState("name");
+  const sortBy = "name";
 
   // Check if this is the logged-in user's channel
   const isMyChannel = user?.username === channelData?.username;
 
   useEffect(() => {
-    // Simulate API call with sample data
-    const fetchSubscribedChannels = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
+    let ignore = false;
+    if (!ignore && channelData?._id) {
+      dispatch(getSubscribedChannels(channelData?._id));
+    }
 
-        // Simulate network delay
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        // Use sample data for now - in real app, this would be an API call
-        setChannels(sampleSubscribedChannels);
-      } catch (err) {
-        setError("Failed to load subscribed channels");
-        console.error("Error fetching subscribed channels:", err);
-      } finally {
-        setIsLoading(false);
-      }
+    return () => {
+      ignore = true;
     };
-
-    fetchSubscribedChannels();
-  }, []);
+  }, [dispatch, channelData?._id]);
 
   // Update filtered channels when search term or sort changes
   useEffect(() => {
-    if (channels.length > 0) {
-      let filtered = searchSubscribedChannels(channels, searchTerm);
-      filtered = sortSubscribedChannels(filtered, sortBy);
-      setFilteredChannels(filtered);
-    }
-  }, [channels, searchTerm, sortBy]);
+    let filtered = searchSubscribedChannels(subscribedChannels, searchTerm);
+    filtered = sortSubscribedChannels(filtered, sortBy);
+    setFilteredChannels(filtered);
+  }, [subscribedChannels, searchTerm, sortBy]);
 
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
   };
 
+  console.log("Filtered Channels", filteredChannels);
+  console.log("Subscribed Channels", subscribedChannels);
+
   // const handleSortChange = (newSortBy) => {
   //   setSortBy(newSortBy);
   // };
 
-  const handleSubscribeToggle = (channelId, newSubscriptionStatus) => {
-    setChannels((prevChannels) =>
-      prevChannels.map((channel) =>
-        channel._id === channelId
-          ? { ...channel, isSubscribed: newSubscriptionStatus }
-          : channel
-      )
-    );
-  };
-
-  // const stats = calculateSubscribedChannelStats(channels);
-  const subscribedCount = getSubscribedChannelCount(channels);
-
-  if (isLoading) {
+  if (subscribedChannelsLoading) {
     return (
       <div>
         <SubscribedChannelHeader
@@ -87,17 +71,12 @@ const ChannelSubscribedListPage = () => {
           totalSubscribed={0}
           isMyChannel={isMyChannel}
         />
-        <SubscribedChannelList
-          channels={[]}
-          isLoading={true}
-          error={null}
-          onSubscribeToggle={handleSubscribeToggle}
-        />
+        <SubscribedChannelList channels={[]} isLoading={true} error={null} />
       </div>
     );
   }
 
-  if (error) {
+  if (subscribedChannelsError) {
     return (
       <div>
         <SubscribedChannelHeader
@@ -110,7 +89,7 @@ const ChannelSubscribedListPage = () => {
             Error loading subscribed channels
           </div>
           <div className="text-gray-600 dark:text-gray-400 text-sm">
-            {error}
+            {subscribedChannelsError}
           </div>
         </div>
       </div>
@@ -136,7 +115,6 @@ const ChannelSubscribedListPage = () => {
         channels={filteredChannels}
         isLoading={false}
         error={null}
-        onSubscribeToggle={handleSubscribeToggle}
       />
     </div>
   );

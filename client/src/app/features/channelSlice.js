@@ -47,9 +47,17 @@ const initialState = {
     },
     isNotFetched: true,
   },
+  subscribedChannels: {
+    subscribedChannels: [],
+    subscribedCount: 0,
+    isNotFetched: true,
+  },
+  ChannelPlaylists: {},
 
   channelVideosLoading: false,
   channelVideosError: null,
+  subscribedChannelsLoading: false,
+  subscribedChannelsError: null,
   loading: false,
   error: null,
   isSubscribing: false,
@@ -61,6 +69,7 @@ const initialState = {
     channelData: {}, // { username: { data, timestamp } }
     channelVideos: {}, // { channelId: { data, timestamp, queryKey } }
     channelTweets: {}, // { channelId: { data, timestamp } }
+    subscribedChannels: {}, // { channelId: { data, timestamp } }
   },
 };
 
@@ -127,6 +136,25 @@ export const getChannelTweets = createAsyncThunk(
   }
 );
 
+export const getSubscribedChannels = createAsyncThunk(
+  "channel/getSubscribedChannels",
+  async (channelId, { getState, rejectWithValue }) => {
+    try {
+      const { cache } = getState().channel;
+      const cached = cache.subscribedChannels[channelId];
+
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        return { data: cached.data, cacheKey: channelId, fromApi: false };
+      }
+
+      const data = await fetchData(`sub/u/${channelId}`);
+      return { data, cacheKey: channelId, fromApi: true };
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
 export const createChannelTweet = createAsyncThunk(
   "channel/createNewTweet",
   async (content, { rejectWithValue }) => {
@@ -144,7 +172,7 @@ export const toggleSubscription = createAsyncThunk(
   async (id, { rejectWithValue }) => {
     try {
       const data = await updateData(`sub/c/${id}`, {}, "POST");
-      return data;
+      return { ...data, id };
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -218,6 +246,40 @@ const channelSlice = createSlice({
 
       if (state.channelData.username === username) {
         state.channelData.username = newUsername;
+      }
+    },
+    updateIsSubscribedInSubscribedChannels: (state, action) => {
+      const { channelUsername, isSubscribed } = action.payload;
+      const currentChannelId = state.channelData._id;
+
+      // Update the main state
+      const channelToUpdate = state.subscribedChannels.subscribedChannels.find(
+        (channel) => channel.subscribedChannel.username === channelUsername
+      );
+
+      if (channelToUpdate) {
+        channelToUpdate.subscribedChannel.subscribed = isSubscribed;
+      }
+
+      // Update the cache
+      if (state.cache.subscribedChannels[currentChannelId]) {
+        state.cache.subscribedChannels[
+          currentChannelId
+        ].data.subscribedChannels = state.cache.subscribedChannels[
+          currentChannelId
+        ].data.subscribedChannels.map((channel) => {
+          if (channel.subscribedChannel.username === channelUsername) {
+            return {
+              ...channel,
+              subscribedChannel: {
+                ...channel.subscribedChannel,
+                subscribed: isSubscribed,
+              },
+            };
+          }
+          return channel;
+        });
+        state.cache.subscribedChannels[currentChannelId].timestamp = Date.now();
       }
     },
   },
@@ -313,14 +375,48 @@ const channelSlice = createSlice({
         state.isCreatingTweet = false;
         state.error = action.payload || action.error.message;
       })
+      .addCase(getSubscribedChannels.pending, (state) => {
+        state.subscribedChannelsLoading = true;
+      })
+      .addCase(getSubscribedChannels.fulfilled, (state, action) => {
+        const { data, cacheKey, fromApi } = action.payload;
+        // Handle the backend response structure: { subscribedChannels: [...], subscribedCount: 1 }
+        state.subscribedChannels.subscribedChannels =
+          data.subscribedChannels || [];
+        state.subscribedChannels.subscribedCount = data.subscribedCount || 0;
+        state.subscribedChannelsLoading = false;
+        state.subscribedChannelsError = null;
+        state.error = null;
+        if (fromApi) {
+          state.cache.subscribedChannels[cacheKey] = {
+            data: data, // Store only the data, not the entire action.payload
+            timestamp: Date.now(),
+          };
+        }
+      })
+      .addCase(getSubscribedChannels.rejected, (state, action) => {
+        state.subscribedChannelsError = action.payload || action.error.message;
+        state.subscribedChannelsLoading = false;
+      })
       .addCase(toggleSubscription.pending, (state) => {
         state.isSubscribing = true;
       })
       .addCase(toggleSubscription.fulfilled, (state, action) => {
         state.isSubscribing = false;
         state.error = null;
-        state.channelData.isSubscribed = action.payload.isSubscribed;
-        state.channelData.subscribersCount = action.payload.subscriberCount;
+        if (action.payload.id === state.channelData._id) {
+          state.channelData.isSubscribed = action.payload.isSubscribed;
+          state.channelData.subscribersCount = action.payload.subscriberCount;
+        }
+        console.log("toggleSubscription.fulfilled", action.payload);
+
+        if (state.cache.channelData[action.payload.id]) {
+          state.cache.channelData[action.payload.id].data.isSubscribed =
+            action.payload.isSubscribed;
+          state.cache.channelData[action.payload.id].data.subscribersCount =
+            action.payload.subscriberCount;
+          state.cache.channelData[action.payload.id].timestamp = Date.now();
+        }
       })
       .addCase(toggleSubscription.rejected, (state, action) => {
         state.isSubscribing = false;
@@ -336,6 +432,7 @@ export const {
   updateCachedChannelCoverImage,
   updateCachedChannelProfileInfo,
   updateCachedChannelChannelInfo,
+  updateIsSubscribedInSubscribedChannels,
 } = channelSlice.actions;
 
 export const selectChannelData = (state) => state.channel.channelData;
@@ -353,5 +450,11 @@ export const selectChannelTweetsError = (state) =>
   state.channel.channelTweetsError;
 export const selectChannelTweets = (state) => state.channel.channelTweets;
 export const selectIsCreatingTweet = (state) => state.channel.isCreatingTweet;
+export const selectSubscribedChannels = (state) =>
+  state.channel.subscribedChannels;
+export const selectSubscribedChannelsLoading = (state) =>
+  state.channel.subscribedChannelsLoading;
+export const selectSubscribedChannelsError = (state) =>
+  state.channel.subscribedChannelsError;
 
 export default channelSlice.reducer;

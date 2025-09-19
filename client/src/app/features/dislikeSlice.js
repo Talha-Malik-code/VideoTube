@@ -13,6 +13,7 @@ const initialState = {
 // Default state objects to ensure stable references
 const defaultDislikeState = { isDisliked: false, dislikeCount: 0 };
 const defaultCommentDislikeState = { isDisliked: false, dislikeCount: 0 };
+const defaultTweetDislikeState = { isDisliked: false, dislikeCount: 0 };
 
 export const toggleVideoDislike = createAsyncThunk(
   "dislike/toggleVideoDislike",
@@ -89,6 +90,12 @@ const dislikeSlice = createSlice({
         state.commentDislikes[commentId] = { isDisliked, dislikeCount };
       }
     },
+    initializeTweetDislikeState: (state, action) => {
+      const { tweetId, isDisliked, dislikeCount } = action.payload;
+      if (!state.tweetDislikes[tweetId]) {
+        state.tweetDislikes[tweetId] = { isDisliked, dislikeCount };
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -151,31 +158,20 @@ export const {
   setCommentDislikeState,
   initializeVideoDislikeState,
   initializeCommentDislikeState,
+  initializeTweetDislikeState,
 } = dislikeSlice.actions;
 
 // Memoized selectors with stable references
 export const selectVideoDislikeState = (state, videoId) => {
-  const dislikeState = state.dislike.videoDislikes[videoId];
-  if (dislikeState) {
-    return dislikeState;
-  }
-  return defaultDislikeState;
+  return state.dislike.videoDislikes[videoId] || defaultDislikeState;
 };
 
 export const selectCommentDislikeState = (state, commentId) => {
-  const dislikeState = state.dislike.commentDislikes[commentId];
-  if (dislikeState) {
-    return dislikeState;
-  }
-  return defaultCommentDislikeState;
+  return state.dislike.commentDislikes[commentId] || defaultCommentDislikeState;
 };
 
 export const selectTweetDislikeState = (state, tweetId) => {
-  const dislikeState = state.dislike.tweetDislikes[tweetId];
-  if (dislikeState) {
-    return dislikeState;
-  }
-  return defaultDislikeState;
+  return state.dislike.tweetDislikes[tweetId] || defaultTweetDislikeState;
 };
 
 export const selectIsDisliking = (state) => state.dislike.isDisliking;

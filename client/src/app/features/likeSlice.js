@@ -158,27 +158,15 @@ export const {
 
 // Memoized selectors with stable references
 export const selectVideoLikeState = (state, videoId) => {
-  const likeState = state.like.videoLikes[videoId];
-  if (likeState) {
-    return likeState;
-  }
-  return defaultLikeState;
+  return state.like.videoLikes[videoId] || defaultLikeState;
 };
 
 export const selectCommentLikeState = (state, commentId) => {
-  const likeState = state.like.commentLikes[commentId];
-  if (likeState) {
-    return likeState;
-  }
-  return defaultCommentLikeState;
+  return state.like.commentLikes[commentId] || defaultCommentLikeState;
 };
 
 export const selectTweetLikeState = (state, tweetId) => {
-  const likeState = state.like.tweetLikes[tweetId];
-  if (likeState) {
-    return likeState;
-  }
-  return defaultTweetLikeState;
+  return state.like.tweetLikes[tweetId] || defaultTweetLikeState;
 };
 
 export const selectIsLiking = (state) => state.like.isLiking;

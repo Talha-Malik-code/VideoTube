@@ -17,7 +17,7 @@ const ChannelPlaylistPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [sortBy, setSortBy] = useState("newest");
-  const [showStats, setShowStats] = useState(true);
+  const [showStats, setShowStats] = useState(false);
 
   // Check if this is the logged-in user's channel
   const isMyChannel = user?.username === channelData?.username;

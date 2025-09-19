@@ -1,13 +1,19 @@
 import React from "react";
 import Button from "./Button";
+import { useDispatch, useSelector } from "react-redux";
+import { selectIsLoggedIn } from "../app/features/userSlice";
+import { openDialog } from "../app/features/dialogToggleSlice";
+import {
+  selectIsSubscribing,
+  toggleSubscription,
+  updateIsSubscribedInSubscribedChannels,
+} from "../app/features/channelSlice";
 
-const SubscribedChannelCard = ({
-  channel,
-  isSubscribed = false,
-  onSubscribeToggle,
-  className = "",
-}) => {
-  const { _id, username, fullName, avatar, subscriberCount = 0 } = channel;
+const SubscribedChannelCard = ({ channel, isSubscribed, className = "" }) => {
+  const dispatch = useDispatch();
+  const isLoggedIn = useSelector(selectIsLoggedIn);
+  const isSubscribing = useSelector(selectIsSubscribing);
+  const { _id, fullName, avatar, subscriberCount = 0, username } = channel;
 
   const formatSubscriberCount = (count) => {
     if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
@@ -15,11 +21,25 @@ const SubscribedChannelCard = ({
     return count.toString();
   };
 
-  const handleSubscribeToggle = () => {
-    if (onSubscribeToggle) {
-      onSubscribeToggle(_id, !isSubscribed);
+  const handleSubscribeToggle = async () => {
+    console.log("Button clicked");
+    if (!isLoggedIn) {
+      dispatch(openDialog("auth"));
+    } else {
+      const result = await dispatch(toggleSubscription(_id));
+      console.log("result.payload.isSubscribed", result.payload.isSubscribed);
+      if (result.meta.requestStatus === "fulfilled") {
+        dispatch(
+          updateIsSubscribedInSubscribedChannels({
+            channelUsername: username,
+            isSubscribed: result.payload.isSubscribed,
+          })
+        );
+      }
     }
   };
+
+  console.log("isSubscribed in SubscribedChannelCard", isSubscribed);
 
   return (
     <div className={`flex w-full justify-between ${className}`}>
@@ -46,12 +66,18 @@ const SubscribedChannelCard = ({
       <div className="block">
         <Button
           className={`px-3 py-2 text-black ${
-            isSubscribed ? "" : "dark:bg-white bg-[#ae7aff]"
-          }`}
+            isSubscribing ? "opacity-50" : ""
+          } ${isSubscribed ? "" : "dark:bg-white bg-[#ae7aff]"}`}
           onClick={handleSubscribeToggle}
+          disabled={isSubscribing}
         >
-          <span className={isSubscribed ? "block" : "hidden"}>Subscribed</span>
-          <span className={isSubscribed ? "hidden" : "block"}>Subscribe</span>
+          <span>
+            {isSubscribing
+              ? "Subscribing..."
+              : isSubscribed
+              ? "Subscribed"
+              : "Subscribe"}
+          </span>
         </Button>
       </div>
     </div>

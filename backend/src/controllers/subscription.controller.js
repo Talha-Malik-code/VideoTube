@@ -121,7 +121,7 @@ const getSubscribedChannel = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Subscriber id is required");
   }
 
-  const subscribedChannels = await Subscription.aggregate([
+  let pipeline = [
     {
       $match: {
         subscriber: new mongoose.Types.ObjectId(subscriberId),
@@ -132,13 +132,29 @@ const getSubscribedChannel = asyncHandler(async (req, res) => {
         from: "users",
         localField: "channel",
         foreignField: "_id",
-        as: "subscribedChannels",
+        as: "subscribedChannel",
         pipeline: [
+          {
+            $lookup: {
+              from: "subscriptions",
+              localField: "_id",
+              foreignField: "channel",
+              as: "subscribers",
+            },
+          },
+          {
+            $addFields: {
+              subscriberCount: {
+                $size: "$subscribers",
+              },
+            },
+          },
           {
             $project: {
               fullName: 1,
               username: 1,
               avatar: 1,
+              subscriberCount: 1,
             },
           },
         ],
@@ -146,27 +162,100 @@ const getSubscribedChannel = asyncHandler(async (req, res) => {
     },
     {
       $addFields: {
-        subscribedChannels: {
-          $first: "$subscribedChannels",
+        subscribedChannel: {
+          $first: "$subscribedChannel",
         },
       },
     },
     {
       $project: {
-        subscribedChannels: 1,
+        _id: 0,
+        subscribedChannel: 1,
+        // subscribedCount: {
+        //   $size: "$$ROOT",
+        // },
       },
     },
-  ]);
+  ];
 
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(
-        200,
+  if (req?.user?._id && mongoose.isValidObjectId(req?.user?._id)) {
+    pipeline = [
+      {
+        $match: {
+          subscriber: new mongoose.Types.ObjectId(subscriberId),
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "channel",
+          foreignField: "_id",
+          as: "subscribedChannel",
+          pipeline: [
+            {
+              $lookup: {
+                from: "subscriptions",
+                localField: "_id",
+                foreignField: "channel",
+                as: "subscribers",
+              },
+            },
+            {
+              $addFields: {
+                subscriberCount: {
+                  $size: "$subscribers",
+                },
+                subscribed: {
+                  $in: [
+                    new mongoose.Types.ObjectId(req?.user?._id),
+                    "$subscribers.subscriber",
+                  ],
+                },
+              },
+            },
+            {
+              $project: {
+                fullName: 1,
+                username: 1,
+                avatar: 1,
+                subscriberCount: 1,
+                subscribed: 1,
+              },
+            },
+          ],
+        },
+      },
+      {
+        $addFields: {
+          subscribedChannel: {
+            $first: "$subscribedChannel",
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          subscribedChannel: 1,
+          // subscribedCount: {
+          //   $size: "$$ROOT",
+          // },
+        },
+      },
+    ];
+  }
+
+  const subscribedChannels = await Subscription.aggregate(pipeline);
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
         subscribedChannels,
-        "Subscribed channel fetched successfully"
-      )
-    );
+        subscribedCount: subscribedChannels.length,
+      },
+      "Subscribed channel fetched successfully"
+    )
+  );
 });
 
 export { toggleSubscription, getUserChannelSubscribers, getSubscribedChannel };

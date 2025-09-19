@@ -6,7 +6,6 @@ const SubscribedChannelList = ({
   channels = [],
   isLoading = false,
   error = null,
-  onSubscribeToggle,
   className = "",
 }) => {
   if (isLoading) {
@@ -60,10 +59,9 @@ const SubscribedChannelList = ({
     <div className={`flex flex-col gap-y-4 py-4 ${className}`}>
       {channels.map((channel) => (
         <SubscribedChannelCard
-          key={channel._id}
-          channel={channel}
-          isSubscribed={channel.isSubscribed}
-          onSubscribeToggle={onSubscribeToggle}
+          key={channel.subscribedChannel._id}
+          channel={channel.subscribedChannel}
+          isSubscribed={channel.subscribedChannel.subscribed}
         />
       ))}
     </div>

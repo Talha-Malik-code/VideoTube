@@ -126,14 +126,34 @@ const getAllTweets = asyncHandler(async (req, res) => {
         dislikesCount: { $size: "$dislikes" },
         isLiked: {
           $cond: {
-            if: { $in: [req.user?._id, "$likes.likedBy"] },
+            if: {
+              $and: [
+                { $ne: [req.user?._id, null] },
+                {
+                  $in: [
+                    new mongoose.Types.ObjectId(req.user?._id),
+                    "$likes.likedBy",
+                  ],
+                },
+              ],
+            },
             then: true,
             else: false,
           },
         },
         isDisliked: {
           $cond: {
-            if: { $in: [req.user?._id, "$dislikes.dislikedBy"] },
+            if: {
+              $and: [
+                { $ne: [req.user?._id, null] },
+                {
+                  $in: [
+                    new mongoose.Types.ObjectId(req.user?._id),
+                    "$dislikes.dislikedBy",
+                  ],
+                },
+              ],
+            },
             then: true,
             else: false,
           },
@@ -227,14 +247,34 @@ const getUserTweets = asyncHandler(async (req, res) => {
         },
         isLiked: {
           $cond: {
-            if: { $in: [req.user?._id, "$likes.likedBy"] },
+            if: {
+              $and: [
+                { $ne: [req.user?._id, null] },
+                {
+                  $in: [
+                    new mongoose.Types.ObjectId(req.user?._id),
+                    "$likes.likedBy",
+                  ],
+                },
+              ],
+            },
             then: true,
             else: false,
           },
         },
         isDisliked: {
           $cond: {
-            if: { $in: [req.user?._id, "$dislikes.dislikedBy"] },
+            if: {
+              $and: [
+                { $ne: [req.user?._id, null] },
+                {
+                  $in: [
+                    new mongoose.Types.ObjectId(req.user?._id),
+                    "$dislikes.dislikedBy",
+                  ],
+                },
+              ],
+            },
             then: true,
             else: false,
           },
@@ -415,14 +455,34 @@ const getTweetsByHashtag = asyncHandler(async (req, res) => {
         dislikesCount: { $size: "$dislikes" },
         isLiked: {
           $cond: {
-            if: { $in: [req.user?._id, "$likes.likedBy"] },
+            if: {
+              $and: [
+                { $ne: [req.user?._id, null] },
+                {
+                  $in: [
+                    new mongoose.Types.ObjectId(req.user?._id),
+                    "$likes.likedBy",
+                  ],
+                },
+              ],
+            },
             then: true,
             else: false,
           },
         },
         isDisliked: {
           $cond: {
-            if: { $in: [req.user?._id, "$dislikes.dislikedBy"] },
+            if: {
+              $and: [
+                { $ne: [req.user?._id, null] },
+                {
+                  $in: [
+                    new mongoose.Types.ObjectId(req.user?._id),
+                    "$dislikes.dislikedBy",
+                  ],
+                },
+              ],
+            },
             then: true,
             else: false,
           },
@@ -517,14 +577,34 @@ const getTrendingTweets = asyncHandler(async (req, res) => {
         dislikesCount: { $size: "$dislikes" },
         isLiked: {
           $cond: {
-            if: { $in: [req.user?._id, "$likes.likedBy"] },
+            if: {
+              $and: [
+                { $ne: [req.user?._id, null] },
+                {
+                  $in: [
+                    new mongoose.Types.ObjectId(req.user?._id),
+                    "$likes.likedBy",
+                  ],
+                },
+              ],
+            },
             then: true,
             else: false,
           },
         },
         isDisliked: {
           $cond: {
-            if: { $in: [req.user?._id, "$dislikes.dislikedBy"] },
+            if: {
+              $and: [
+                { $ne: [req.user?._id, null] },
+                {
+                  $in: [
+                    new mongoose.Types.ObjectId(req.user?._id),
+                    "$dislikes.dislikedBy",
+                  ],
+                },
+              ],
+            },
             then: true,
             else: false,
           },
@@ -609,14 +689,34 @@ const getTweetById = asyncHandler(async (req, res) => {
         dislikesCount: { $size: "$dislikes" },
         isLiked: {
           $cond: {
-            if: { $in: [req.user?._id, "$likes.likedBy"] },
+            if: {
+              $and: [
+                { $ne: [req.user?._id, null] },
+                {
+                  $in: [
+                    new mongoose.Types.ObjectId(req.user?._id),
+                    "$likes.likedBy",
+                  ],
+                },
+              ],
+            },
             then: true,
             else: false,
           },
         },
         isDisliked: {
           $cond: {
-            if: { $in: [req.user?._id, "$dislikes.dislikedBy"] },
+            if: {
+              $and: [
+                { $ne: [req.user?._id, null] },
+                {
+                  $in: [
+                    new mongoose.Types.ObjectId(req.user?._id),
+                    "$dislikes.dislikedBy",
+                  ],
+                },
+              ],
+            },
             then: true,
             else: false,
           },
