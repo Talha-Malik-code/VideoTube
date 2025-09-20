@@ -52,8 +52,10 @@ const initialState = {
     subscribedCount: 0,
     isNotFetched: true,
   },
-  ChannelPlaylists: {},
+  channelPlaylists: [],
 
+  channelPlaylistsLoading: false,
+  channelPlaylistsError: null,
   channelVideosLoading: false,
   channelVideosError: null,
   subscribedChannelsLoading: false,
@@ -70,6 +72,7 @@ const initialState = {
     channelVideos: {}, // { channelId: { data, timestamp, queryKey } }
     channelTweets: {}, // { channelId: { data, timestamp } }
     subscribedChannels: {}, // { channelId: { data, timestamp } }
+    channelPlaylists: {}, // { channelId: { data, timestamp } }
   },
 };
 
@@ -179,6 +182,25 @@ export const toggleSubscription = createAsyncThunk(
   }
 );
 
+export const getChannelPlaylists = createAsyncThunk(
+  "channel/getChannelPlaylists",
+  async (channelId, { getState, rejectWithValue }) => {
+    try {
+      const { cache } = getState().channel;
+      const cached = cache.channelPlaylists[channelId];
+
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        return { data: cached.data, cacheKey: channelId, fromApi: false };
+      }
+
+      const data = await fetchData(`playlist/user/${channelId}`);
+      return { data, cacheKey: channelId, fromApi: true };
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
 const channelSlice = createSlice({
   name: "channel",
   initialState,
@@ -187,6 +209,9 @@ const channelSlice = createSlice({
       state.channelData = initialState.channelData;
       state.channelVideos = initialState.channelVideos;
       state.channelTweets = initialState.channelTweets;
+      state.channelPlaylists = initialState.channelPlaylists;
+      state.channelPlaylistsLoading = false;
+      state.channelPlaylistsError = null;
       state.isUpdatingChannelInfo = false;
       state.channelVideosLoading = false;
       state.channelVideosError = null;
@@ -398,6 +423,25 @@ const channelSlice = createSlice({
         state.subscribedChannelsError = action.payload || action.error.message;
         state.subscribedChannelsLoading = false;
       })
+      .addCase(getChannelPlaylists.pending, (state) => {
+        state.channelPlaylistsLoading = true;
+      })
+      .addCase(getChannelPlaylists.fulfilled, (state, action) => {
+        const { data, cacheKey, fromApi } = action.payload;
+        state.channelPlaylists = data;
+        state.channelPlaylistsLoading = false;
+        state.channelPlaylistsError = null;
+        if (fromApi) {
+          state.cache.channelPlaylists[cacheKey] = {
+            data,
+            timestamp: Date.now(),
+          };
+        }
+      })
+      .addCase(getChannelPlaylists.rejected, (state, action) => {
+        state.channelPlaylistsError = action.payload || action.error.message;
+        state.channelPlaylistsLoading = false;
+      })
       .addCase(toggleSubscription.pending, (state) => {
         state.isSubscribing = true;
       })
@@ -456,5 +500,10 @@ export const selectSubscribedChannelsLoading = (state) =>
   state.channel.subscribedChannelsLoading;
 export const selectSubscribedChannelsError = (state) =>
   state.channel.subscribedChannelsError;
+export const selectChannelPlaylists = (state) => state.channel.channelPlaylists;
+export const selectChannelPlaylistsLoading = (state) =>
+  state.channel.channelPlaylistsLoading;
+export const selectChannelPlaylistsError = (state) =>
+  state.channel.channelPlaylistsError;
 
 export default channelSlice.reducer;

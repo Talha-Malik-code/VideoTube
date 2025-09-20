@@ -63,7 +63,7 @@ const ChannelSubscribedListPage = () => {
   //   setSortBy(newSortBy);
   // };
 
-  if (subscribedChannelsLoading) {
+  if (subscribedChannelsLoading || subscribedChannels.isNotFetched) {
     return (
       <div>
         <SubscribedChannelHeader

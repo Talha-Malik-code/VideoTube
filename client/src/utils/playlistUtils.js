@@ -137,5 +137,14 @@ export const getPlaylistThumbnail = (playlist) => {
   }
 
   // Fallback to default thumbnail
-  return "https://images.pexels.com/photos/3561339/pexels-photo-3561339.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1";
+  return "https://images.unsplash.com/photo-1694878982098-1cec80d96eca?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MDMwNDd8MHwxfHNlYXJjaHw0fHx0aHVtYm5haWwlMkNkZWZhdWx0fGVufDB8fHx8MTc1ODM1MjY3NXww&ixlib=rb-4.1.0&q=80&w=1080";
+  // return "https://images.unsplash.com/photo-1642761450221-cad688ceafe4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MDMwNDd8MHwxfHNlYXJjaHw3fHxwbGF5bGlzdHRodW1ibmFpbCUyQ3B1cnBsZSUyQ2Rhcmt8ZW58MHx8fHwxNzU4MzUyMTUyfDA&ixlib=rb-4.1.0&q=80&w=1080";
+  // return "https://images.unsplash.com/photo-1653549892808-aa48a0a18ee6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MDMwNDd8MHwxfHNlYXJjaHw0fHxwbGF5bGlzdHRodW1ibmFpbCUyQ3B1cnBsZSUyQ2Rhcmt8ZW58MHx8fHwxNzU4MzUyMTUyfDA&ixlib=rb-4.1.0&q=80&w=1080";
+  // return "https://images.unsplash.com/photo-1653549892808-aa48a0a18ee6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MDMwNDd8MHwxfHNlYXJjaHw0fHxwbGF5bGlzdHRodW1ibmFpbCUyQ3B1cnBsZSUyQ2Rhcmt8ZW58MHx8fHwxNzU4MzUyMTUyfDA&ixlib=rb-4.1.0&q=80&w=400";
+  // return "https://images.unsplash.com/photo-1653549892808-aa48a0a18ee6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MDMwNDd8MHwxfHNlYXJjaHw0fHxwbGF5bGlzdHRodW1ibmFpbCUyQ3B1cnBsZSUyQ2Rhcmt8ZW58MHx8fHwxNzU4MzUyMTUyfDA&ixlib=rb-4.1.0&q=80&w=200";
+  // return "https://images.unsplash.com/photo-1653549892808-aa48a0a18ee6?ixid=M3w4MDMwNDd8MHwxfHNlYXJjaHw0fHxwbGF5bGlzdHRodW1ibmFpbCUyQ3B1cnBsZSUyQ2Rhcmt8ZW58MHx8fHwxNzU4MzUyMTUyfDA&ixlib=rb-4.1.0";
+  // return "https://images.unsplash.com/photo-1728140161994-975b3f4fd93c?ixid=M3w4MDMwNDd8MHwxfHNlYXJjaHwxfHxwbGF5bGlzdCUyQ3RodW1ibmFpbCUyQ2NvbnRyYXN0fGVufDB8fHx8MTc1ODMxMTk3N3ww&ixlib=rb-4.1.0";
+  // return "https://images.unsplash.com/photo-1655199798109-08ff7497e748?ixid=M3w4MDMwNDd8MHwxfHNlYXJjaHwxfHx2aWRlb3R1YmUlMkNwbGF5bGlzdCUyQ3RodW1ibmFpbCUyQ2NvbnRyYXN0fGVufDB8fHx8MTc1ODMxMTk2NXww&ixlib=rb-4.1.0";
+  // return "https://images.unsplash.com/photo-1634155617372-69e7865ff131?ixid=M3w4MDMwNDd8MHwxfHJhbmRvbXx8fHx8fHx8fDE3NTgzMTE5MTl8&ixlib=rb-4.1.0";
+  // return "https://images.pexels.com/photos/3561339/pexels-photo-3561339.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1";
 };
