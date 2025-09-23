@@ -41,11 +41,6 @@ const ChannelPlaylistPage = () => {
     setShowStats(!showStats);
   };
 
-  const handleCreatePlaylist = () => {
-    // TODO: Implement playlist creation
-    console.log("Create playlist clicked");
-  };
-
   if (channelPlaylistsLoading) {
     return (
       <div>
@@ -91,10 +86,7 @@ const ChannelPlaylistPage = () => {
           totalPlaylists={0}
           isMyChannel={isMyChannel}
         />
-        <PlaylistEmptyState
-          isMyChannel={isMyChannel}
-          onCreatePlaylist={handleCreatePlaylist}
-        />
+        <PlaylistEmptyState isMyChannel={isMyChannel} />
       </div>
     );
   }

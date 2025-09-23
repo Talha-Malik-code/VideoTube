@@ -3,18 +3,30 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Playlist } from "../models/playlist.model.js";
 import mongoose, { isValidObjectId } from "mongoose";
+import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
 const createPlaylist = asyncHandler(async (req, res) => {
-  const { name, description, thumbnail } = req.body;
+  const { name, description } = req.body;
+
+  const thumbnailLocalPath = req.file?.path;
 
   if (!name) {
     throw new ApiError(400, "Name is required");
   }
 
+  let thumbnailUrl = "";
+  if (thumbnailLocalPath) {
+    const thumbnailCloudinary = await uploadOnCloudinary(thumbnailLocalPath);
+    if (!thumbnailCloudinary?.url) {
+      throw new ApiError(500, "Error uploading thumbnail to Cloudinary");
+    }
+    thumbnailUrl = thumbnailCloudinary.url;
+  }
+
   const playlist = await Playlist.create({
     name,
-    description,
-    thumbnail,
+    description: description || "",
+    thumbnail: thumbnailUrl,
     owner: req.user?._id,
   });
 

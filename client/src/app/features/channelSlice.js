@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { fetchData, updateData } from "../../utils";
+import { fetchData, updateData, updateWithFormData } from "../../utils";
 
 const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 
@@ -56,6 +56,7 @@ const initialState = {
 
   channelPlaylistsLoading: false,
   channelPlaylistsError: null,
+  isCreatingChannelPlaylist: false,
   channelVideosLoading: false,
   channelVideosError: null,
   subscribedChannelsLoading: false,
@@ -195,6 +196,19 @@ export const getChannelPlaylists = createAsyncThunk(
 
       const data = await fetchData(`playlist/user/${channelId}`);
       return { data, cacheKey: channelId, fromApi: true };
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const createChannelPlaylist = createAsyncThunk(
+  "channel/createChannelPlaylist",
+  async (playlistData, { rejectWithValue }) => {
+    try {
+      console.log(...playlistData);
+      const data = await updateWithFormData("playlist", playlistData);
+      return data;
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -442,6 +456,27 @@ const channelSlice = createSlice({
         state.channelPlaylistsError = action.payload || action.error.message;
         state.channelPlaylistsLoading = false;
       })
+      .addCase(createChannelPlaylist.pending, (state) => {
+        state.isCreatingChannelPlaylist = true;
+        state.channelPlaylistsError = null;
+      })
+      .addCase(createChannelPlaylist.fulfilled, (state, action) => {
+        state.isCreatingChannelPlaylist = false;
+        state.channelPlaylistsError = null;
+        state.channelPlaylists.push(action.payload);
+
+        if (state.cache.channelPlaylists[action.payload.owner]) {
+          state.cache.channelPlaylists[action.payload.owner].data.unshift(
+            action.payload
+          );
+          state.cache.channelPlaylists[action.payload.owner].timestamp =
+            Date.now();
+        }
+      })
+      .addCase(createChannelPlaylist.rejected, (state, action) => {
+        state.channelPlaylistsError = action.payload || action.error.message;
+        state.isCreatingChannelPlaylist = false;
+      })
       .addCase(toggleSubscription.pending, (state) => {
         state.isSubscribing = true;
       })
@@ -505,5 +540,7 @@ export const selectChannelPlaylistsLoading = (state) =>
   state.channel.channelPlaylistsLoading;
 export const selectChannelPlaylistsError = (state) =>
   state.channel.channelPlaylistsError;
+export const selectIsCreatingChannelPlaylist = (state) =>
+  state.channel.isCreatingChannelPlaylist;
 
 export default channelSlice.reducer;

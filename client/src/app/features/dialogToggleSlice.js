@@ -3,6 +3,7 @@ import { createSlice } from "@reduxjs/toolkit";
 const initialState = {
   isAuthDialogOpen: false,
   isUploadVideoDialogOpen: false,
+  isCreatePlaylistDialogOpen: false,
 };
 
 const dialogToggleSlice = createSlice({
@@ -14,6 +15,8 @@ const dialogToggleSlice = createSlice({
         state.isAuthDialogOpen = true;
       } else if (action.payload === "uploadVideo") {
         state.isUploadVideoDialogOpen = true;
+      } else if (action.payload === "createPlaylist") {
+        state.isCreatePlaylistDialogOpen = true;
       }
     },
     closeDialog: (state, action) => {
@@ -21,6 +24,8 @@ const dialogToggleSlice = createSlice({
         state.isAuthDialogOpen = false;
       } else if (action.payload === "uploadVideo") {
         state.isUploadVideoDialogOpen = false;
+      } else if (action.payload === "createPlaylist") {
+        state.isCreatePlaylistDialogOpen = false;
       }
     },
   },
@@ -30,6 +35,8 @@ export const selectIsAuthDialogOpen = (state) =>
   state.dialogToggle.isAuthDialogOpen;
 export const selectIsUploadVideoDialogOpen = (state) =>
   state.dialogToggle.isUploadVideoDialogOpen;
+export const selectIsCreatePlaylistDialogOpen = (state) =>
+  state.dialogToggle.isCreatePlaylistDialogOpen;
 
 export const { openDialog, closeDialog } = dialogToggleSlice.actions;
 export default dialogToggleSlice.reducer;

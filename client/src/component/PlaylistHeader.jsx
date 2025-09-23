@@ -1,11 +1,19 @@
 import React from "react";
 import Button from "./Button";
+import { useDispatch } from "react-redux";
+import { openDialog } from "../app/features/dialogToggleSlice";
 
 const PlaylistHeader = ({
   channelName,
   totalPlaylists = 0,
   isMyChannel = false,
 }) => {
+  const dispatch = useDispatch();
+
+  function onCreatePlaylist() {
+    dispatch(openDialog("createPlaylist"));
+  }
+
   return (
     <div className="mb-6">
       <div className="flex items-center justify-between mb-4">
@@ -19,7 +27,9 @@ const PlaylistHeader = ({
         </div>
 
         {isMyChannel && (
-          <Button className="px-3 py-1.5">Create Playlist</Button>
+          <Button onClick={onCreatePlaylist} className="px-3 py-1.5">
+            Create Playlist
+          </Button>
         )}
       </div>
 

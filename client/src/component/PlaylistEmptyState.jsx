@@ -2,8 +2,16 @@ import React from "react";
 import Button from "./Button";
 import PlaylistNotFound from "./notFound/PlaylistNotFound";
 import PlusIcon from "./iconComponents/PlusIcon";
+import { useDispatch } from "react-redux";
+import { openDialog } from "../app/features/dialogToggleSlice";
 
-const PlaylistEmptyState = ({ isMyChannel = false, onCreatePlaylist }) => {
+const PlaylistEmptyState = ({ isMyChannel = false }) => {
+  const dispatch = useDispatch();
+
+  function onCreatePlaylist() {
+    dispatch(openDialog("createPlaylist"));
+  }
+
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
       {/* <div className="w-24 h-24 bg-gray-200 dark:bg-gray-700 flex items-center justify-center mb-6">

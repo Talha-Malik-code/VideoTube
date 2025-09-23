@@ -9,12 +9,14 @@ import {
   updateAvatarImage,
   selectIsUpdatingAvatar,
   selectImageUploadError,
+  selectIsLoggedIn,
 } from "../../../app/features/userSlice";
 import AButton from "../../../component/AButton";
 import Button from "../../../component/Button";
 import EditIcon from "../../../component/iconComponents/EditIcon";
 import { Link } from "react-router-dom";
 import UploadFileCloudIcon from "../../../component/iconComponents/UploadFileCloudIcon";
+import { openDialog } from "../../../app/features/dialogToggleSlice";
 
 const ChannelInfoSection = ({
   username,
@@ -24,12 +26,17 @@ const ChannelInfoSection = ({
   isMyChannel,
 }) => {
   const dispatch = useDispatch();
+  const isLoggedIn = useSelector(selectIsLoggedIn);
   const isSubscribing = useSelector(selectIsSubscribing);
   const isUpdatingAvatar = useSelector(selectIsUpdatingAvatar);
   const imageUploadError = useSelector(selectImageUploadError);
 
   async function onSubscriptionToggle() {
-    await dispatch(toggleSubscription(channelData?._id));
+    if (isLoggedIn) {
+      await dispatch(toggleSubscription(channelData?._id));
+    } else {
+      dispatch(openDialog("auth"));
+    }
   }
 
   async function handleAvatarFileChange(e) {

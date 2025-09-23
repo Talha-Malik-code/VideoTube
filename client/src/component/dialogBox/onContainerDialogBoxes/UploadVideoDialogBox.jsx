@@ -106,10 +106,12 @@ const UploadVideoDialogBox = () => {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="h-full overflow-auto border bg-[#121212]"
+        className="h-full overflow-auto border bg-white dark:bg-[#121212]"
       >
         <div className="flex items-center justify-between border-b p-4">
-          <h2 className="text-xl font-semibold">Upload Videos</h2>
+          <h2 className="text-xl font-semibold text-black dark:text-white">
+            Upload Videos
+          </h2>
           <AButton onClick={handleClickSave}>Save</AButton>
         </div>
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-y-4 p-4">
@@ -130,33 +132,35 @@ const UploadVideoDialogBox = () => {
                 <span className="mb-4 inline-block w-24 rounded-full bg-[#E4D3FF] p-4 text-[#AE7AFF]">
                   <UploadIcon />
                 </span>
-                <h6 className="mb-2 font-semibold">
+                <h6 className="mb-2 font-semibold text-black dark:text-white">
                   Drag and drop video files to upload
                 </h6>
-                <p className="text-gray-400">
+                <p className="text-gray-600 dark:text-gray-400">
                   Your videos will be private untill you publish them.
                 </p>
                 {errors?.videoFile && (
                   <p className="text-red-500">*{errors.videoFile}</p>
                 )}
-                <label
-                  htmlFor="upload-video"
-                  className="group/btn mt-4 inline-flex w-auto cursor-pointer items-center gap-x-2 bg-[#ae7aff] px-3 py-2 text-center font-bold text-black shadow-[5px_5px_0px_0px_#4f4e4e] transition-all duration-150 ease-in-out active:translate-x-[5px] active:translate-y-[5px] active:shadow-[0px_0px_0px_0px_#4f4e4e]"
-                >
-                  <input
-                    onChange={handleSelectVideo}
-                    type="file"
-                    accept="video/mp4, video/webm, video/ogg, .mp4, .webm, .mkv, .ts"
-                    id="upload-video"
-                    className="sr-only"
-                  />
-                  Select Files
-                </label>
+                <AButton htmlFor="upload-video">
+                  <label htmlFor="upload-video">
+                    <input
+                      onChange={handleSelectVideo}
+                      type="file"
+                      accept="video/mp4, video/webm, video/ogg, .mp4, .webm, .mkv, .ts"
+                      id="upload-video"
+                      className="sr-only"
+                    />
+                    Select Files
+                  </label>
+                </AButton>
               </>
             )}
           </div>
           <div className="w-full">
-            <label htmlFor="thumbnail" className="mb-1 inline-block">
+            <label
+              htmlFor="thumbnail"
+              className="mb-1 inline-block text-black dark:text-white"
+            >
               Thumbnail
               <sup>*</sup>
             </label>
@@ -171,7 +175,10 @@ const UploadVideoDialogBox = () => {
             )}
           </div>
           <div className="w-full">
-            <label htmlFor="title" className="mb-1 inline-block">
+            <label
+              htmlFor="title"
+              className="mb-1 inline-block text-black dark:text-white"
+            >
               Title
               <sup>*</sup>
             </label>
@@ -180,12 +187,15 @@ const UploadVideoDialogBox = () => {
               onChange={handleChangeTitle}
               id="title"
               type="text"
-              className="w-full border bg-transparent px-2 py-1 outline-none"
+              className="w-full border bg-transparent px-2 py-1 outline-none text-black dark:text-white"
             />
             {errors?.title && <p className="text-red-500">*{errors.title}</p>}
           </div>
           <div className="w-full">
-            <label htmlFor="desc" className="mb-1 inline-block">
+            <label
+              htmlFor="desc"
+              className="mb-1 inline-block text-black dark:text-white"
+            >
               Description
               <sup>*</sup>
             </label>
@@ -193,7 +203,7 @@ const UploadVideoDialogBox = () => {
               value={details.description}
               onChange={handleChangeDescription}
               id="desc"
-              className="h-40 w-full resize-none border bg-transparent px-2 py-1 outline-none"
+              className="h-40 w-full resize-none border bg-transparent px-2 py-1 outline-none text-black dark:text-white"
             />
             {errors?.description && (
               <p className="text-red-500">*{errors.description}</p>

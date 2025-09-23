@@ -31,7 +31,7 @@ const SubscribedToNotFound = ({
         <h5 className="mb-2 font-semibold">{title}</h5>
         <p>
           {text}
-          <strong>subscribe</strong>a new channel.
+          <strong> subscribe </strong>a new channel.
         </p>
       </div>
     </div>
