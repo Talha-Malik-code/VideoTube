@@ -237,7 +237,66 @@ const channelSlice = createSlice({
       state.cache = initialState.cache;
     },
     addUploadedVideo: (state, action) => {
-      state.channelData.videos.push(action.payload);
+      const uploadedVideo = action.payload;
+      // Always keep channelData.videos in sync if present
+      if (state.channelData && Array.isArray(state.channelData.videos)) {
+        state.channelData.videos.push(uploadedVideo);
+      }
+
+      // Determine uploaded video's owner id from common shapes
+      const ownerId =
+        uploadedVideo?.owner?._id ||
+        uploadedVideo?.owner?.id ||
+        uploadedVideo?.ownerId ||
+        uploadedVideo?.userId ||
+        null;
+
+      // Only mutate channelVideos and cache if the currently open channel matches the uploaded video's owner
+      if (!ownerId || state.channelData?._id !== ownerId) {
+        return;
+      }
+
+      // Update in-memory channelVideos list shown on the channel page
+      if (state.channelVideos && Array.isArray(state.channelVideos.docs)) {
+        // Insert at the top similar to most-recent-first lists
+        state.channelVideos.docs.unshift(uploadedVideo);
+        if (state.channelVideos.pagination) {
+          const pagination = state.channelVideos.pagination;
+          if (typeof pagination.totalDocs === "number") {
+            pagination.totalDocs += 1;
+          }
+          // If you maintain other pagination fields, you may want to recalc here
+        }
+      }
+
+      // Update any cached entries for this channel's videos
+      // Cache keys look like: `${channelId}-${JSON.stringify(query)}`
+      if (state.cache && state.cache.channelVideos) {
+        const cacheKeys = Object.keys(state.cache.channelVideos);
+        for (const key of cacheKeys) {
+          if (!key.startsWith(`${ownerId}-`)) continue;
+
+          const cachedEntry = state.cache.channelVideos[key];
+          if (!cachedEntry || !cachedEntry.data) continue;
+
+          const data = cachedEntry.data;
+          if (Array.isArray(data.docs)) {
+            // Only prepend to page 1 caches if pagination info exists and page === 1, else skip
+            const pageNumber = data.pagination?.page;
+            if (!pageNumber || pageNumber === 1) {
+              data.docs.unshift(uploadedVideo);
+              if (
+                data.pagination &&
+                typeof data.pagination.totalDocs === "number"
+              ) {
+                data.pagination.totalDocs += 1;
+              }
+              // Refresh timestamp as cache mutated
+              cachedEntry.timestamp = Date.now();
+            }
+          }
+        }
+      }
     },
     updateCachedChannelAvatar: (state, action) => {
       const { username, avatar } = action.payload;

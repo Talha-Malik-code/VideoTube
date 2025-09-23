@@ -14,6 +14,7 @@ import { useEffect } from "react";
 import { checkAuthStatus } from "./app/features/userSlice";
 import Channel from "./pages/Channel/Channel";
 import OnPageDialogBoxes from "./component/dialogBox/OnPageDialogBoxes";
+import Playlist from "./pages/Playlist/Playlist";
 
 function App() {
   const dispatch = useDispatch();
@@ -32,6 +33,7 @@ function App() {
           <Route index element={<Home />} />
           <Route path="channel/:username" element={<Channel />} />
           <Route path="video/:id" element={<VideoDetail />} />
+          <Route path="playlist/:id" element={<Playlist />} />
         </Route>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />

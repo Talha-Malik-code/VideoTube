@@ -37,6 +37,7 @@ export const selectIsUploadVideoDialogOpen = (state) =>
   state.dialogToggle.isUploadVideoDialogOpen;
 export const selectIsCreatePlaylistDialogOpen = (state) =>
   state.dialogToggle.isCreatePlaylistDialogOpen;
+export const selectAllDialogState = (state) => state.dialogToggle;
 
 export const { openDialog, closeDialog } = dialogToggleSlice.actions;
 export default dialogToggleSlice.reducer;

@@ -6,6 +6,7 @@ import commentReducer from "../features/commentSlice";
 import likeReducer from "../features/likeSlice";
 import dislikeReducer from "../features/dislikeSlice";
 import channelReducer from "../features/channelSlice";
+import playlistReducer from "../features/playlistSlice";
 
 const store = configureStore({
   reducer: {
@@ -16,6 +17,7 @@ const store = configureStore({
     like: likeReducer,
     dislike: dislikeReducer,
     channel: channelReducer,
+    playlist: playlistReducer,
   },
 });
 

@@ -90,7 +90,7 @@ const CreatePlaylistDialogBox = () => {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="h-full overflow-auto border bg-white dark:bg-[#121212]"
+        className="h-full max-h-[818px] overflow-auto border bg-white dark:bg-[#121212]"
       >
         <div className="flex items-center justify-between border-b p-4">
           <h2 className="text-xl font-semibold text-black dark:text-white">
