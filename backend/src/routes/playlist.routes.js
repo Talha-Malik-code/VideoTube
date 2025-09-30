@@ -18,7 +18,7 @@ router.route("/").post(verifyJWT, upload.single("thumbnail"), createPlaylist);
 router
   .route("/:playlistId")
   .get(getPlaylistById)
-  .patch(verifyJWT, updatePlaylist)
+  .patch(verifyJWT, upload.single("thumbnail"), updatePlaylist)
   .delete(verifyJWT, deletePlaylist);
 
 router.route("/add/:videoId/:playlistId").patch(verifyJWT, addVideoToPlaylist);

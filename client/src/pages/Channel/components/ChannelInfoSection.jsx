@@ -17,6 +17,7 @@ import EditIcon from "../../../component/iconComponents/EditIcon";
 import { Link } from "react-router-dom";
 import UploadFileCloudIcon from "../../../component/iconComponents/UploadFileCloudIcon";
 import { openDialog } from "../../../app/features/dialogToggleSlice";
+import { updateCachedOwnerAvatar } from "../../../app/features/playlistSlice";
 
 const ChannelInfoSection = ({
   username,
@@ -70,6 +71,12 @@ const ChannelInfoSection = ({
             updateCachedChannelAvatar({
               username: username,
               avatar: result.payload.avatar,
+            })
+          );
+          dispatch(
+            updateCachedOwnerAvatar({
+              userId: channelData?._id,
+              newAvatar: result.payload.avatar,
             })
           );
         }

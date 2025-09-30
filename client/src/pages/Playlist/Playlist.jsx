@@ -11,6 +11,8 @@ import {
 import { useParams } from "react-router-dom";
 import PlaylistNotFound from "../../component/notFound/PlaylistNotFound";
 import PlaylistSkeleton from "./components/PlaylistSkeleton";
+import { selectUserData } from "../../app/features/userSlice";
+import EditPlaylistDialog from "./components/EditPlaylistDialog";
 
 const STATIC_VIDEOS = [
   {
@@ -120,6 +122,10 @@ const Playlist = () => {
   const playlist = useSelector(selectPlaylist);
   const isLoading = useSelector(selectIsLoading);
   const error = useSelector(selectError);
+  const user = useSelector(selectUserData);
+  const isOwner =
+    user?._id && playlist?.owner?._id && user._id === playlist.owner._id;
+  const [isEditOpen, setIsEditOpen] = React.useState(false);
 
   useEffect(() => {
     dispatch(getPlaylist(id));
@@ -135,31 +141,36 @@ const Playlist = () => {
     return <PlaylistNotFound title="Error loading playlist" text={error} />;
   }
 
-  if (
-    !playlist ||
-    !Array.isArray(playlist.videos) ||
-    playlist.videos.length === 0
-  ) {
-    return (
-      <PlaylistNotFound
-        title="No videos in this playlist"
-        text="This playlist does not contain any videos yet."
-      />
-    );
-  }
-
   return (
     <div className="flex flex-wrap gap-x-4 gap-y-10 p-4 xl:flex-nowrap">
       <div className="w-full shrink-0 sm:max-w-md xl:max-w-sm">
-        <PlaylistHero playlist={playlist} />
+        <PlaylistHero playlist={playlist} onEdit={() => setIsEditOpen(true)} />
       </div>
       <div className="flex w-full flex-col gap-y-4">
-        {playlist.videos.map((video) => (
-          <div key={video._id} className="border dark:bg-transparent bg-white">
-            <PlaylistVideoItem video={video} />
-          </div>
-        ))}
+        {!playlist ||
+        !Array.isArray(playlist.videos) ||
+        playlist.videos.length === 0 ? (
+          <PlaylistNotFound
+            title="No videos in this playlist"
+            text="This playlist does not contain any videos yet."
+          />
+        ) : (
+          playlist.videos.map((video) => (
+            <div
+              key={video._id}
+              className="border dark:bg-transparent bg-white"
+            >
+              <PlaylistVideoItem video={video} />
+            </div>
+          ))
+        )}
       </div>
+      {isOwner && isEditOpen && (
+        <EditPlaylistDialog
+          playlist={playlist}
+          onClose={() => setIsEditOpen(false)}
+        />
+      )}
     </div>
   );
 };

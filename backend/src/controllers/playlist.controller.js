@@ -3,7 +3,10 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Playlist } from "../models/playlist.model.js";
 import mongoose, { isValidObjectId } from "mongoose";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import {
+  deleteFromCloudinary,
+  uploadOnCloudinary,
+} from "../utils/cloudinary.js";
 
 const createPlaylist = asyncHandler(async (req, res) => {
   const { name, description } = req.body;
@@ -220,14 +223,18 @@ const deletePlaylist = asyncHandler(async (req, res) => {
 
 const updatePlaylist = asyncHandler(async (req, res) => {
   const { playlistId } = req.params;
-  const { name, description, thumbnail } = req.body;
+  const { name, description } = req.body;
+
+  const thumbnailLocalPath = req.file?.path;
 
   if (!isValidObjectId(playlistId)) {
     throw new ApiError(401, "Invalid playlist id");
   }
 
-  if (!name && !description) {
-    throw new ApiError(400, "Name or description is required");
+  console.log("name & des:", name, description);
+
+  if (!name && !description && !thumbnailLocalPath) {
+    throw new ApiError(400, "Name, description or thumbnail is required");
   }
 
   const playlist = await Playlist.findById(playlistId);
@@ -240,14 +247,88 @@ const updatePlaylist = asyncHandler(async (req, res) => {
     throw new ApiError(403, "Unaouthorized request");
   }
 
+  const oldThumbnail = playlist.thumbnail;
+  const oldThumbnailParts = oldThumbnail.split("/");
+  const oldThumbnailPublicId =
+    oldThumbnailParts[oldThumbnailParts.length - 1].split(".")[0];
+
+  let thumbnailUrl = "";
+  if (thumbnailLocalPath) {
+    const thumbnailCloudinary = await uploadOnCloudinary(thumbnailLocalPath);
+    if (!thumbnailCloudinary?.url) {
+      throw new ApiError(500, "Error uploading thumbnail to Cloudinary");
+    }
+    thumbnailUrl = thumbnailCloudinary.url;
+  }
+
   if (name) playlist.name = name;
   if (description) playlist.description = description;
-  if (thumbnail) playlist.thumbnail = thumbnail;
+  if (thumbnailUrl.trim().length > 0) playlist.thumbnail = thumbnailUrl;
   await playlist.save({ validateBeforeSave: false });
+
+  await deleteFromCloudinary(oldThumbnailPublicId);
+
+  const updatedPlaylist = await Playlist.aggregate([
+    {
+      $match: { _id: new mongoose.Types.ObjectId(playlist._id) },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "owner",
+        pipeline: [
+          {
+            $project: {
+              fullName: 1,
+              username: 1,
+              avatar: 1,
+            },
+          },
+        ],
+      },
+    },
+    {
+      $unwind: "$owner",
+    },
+    {
+      $lookup: {
+        from: "videos",
+        localField: "videos",
+        foreignField: "_id",
+        as: "videos",
+        pipeline: [
+          {
+            $lookup: {
+              from: "users",
+              localField: "owner",
+              foreignField: "_id",
+              as: "owner",
+              pipeline: [
+                {
+                  $project: {
+                    fullName: 1,
+                    username: 1,
+                    avatar: 1,
+                  },
+                },
+              ],
+            },
+          },
+          {
+            $unwind: "$owner",
+          },
+        ],
+      },
+    },
+  ]);
 
   return res
     .status(200)
-    .json(new ApiResponse(200, playlist, "Playlist updated successfully"));
+    .json(
+      new ApiResponse(200, updatedPlaylist, "Playlist updated successfully")
+    );
 });
 
 export {

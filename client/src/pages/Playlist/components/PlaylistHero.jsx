@@ -1,10 +1,16 @@
 import React from "react";
 import { getPlaylistThumbnail } from "../../../utils/playlistUtils";
+import { useSelector } from "react-redux";
+import { selectUserData } from "../../../app/features/userSlice";
+import AButton from "../../../component/AButton";
 import { useNavigate } from "react-router-dom";
 
-const PlaylistHero = ({ playlist }) => {
+const PlaylistHero = ({ playlist, onEdit }) => {
   const navigate = useNavigate();
   const thumbnail = getPlaylistThumbnail(playlist);
+  const user = useSelector(selectUserData);
+  const isOwner =
+    user?._id && playlist?.owner?._id && user._id === playlist.owner._id;
   const goToChannel = () => navigate(`/channel/${playlist?.owner?.username}`);
 
   // Calculate total views from videos
@@ -65,6 +71,11 @@ const PlaylistHero = ({ playlist }) => {
               </div>
             </div>
           </div>
+          {isOwner && (
+            <div className="absolute right-2 top-2 z-[2]">
+              <AButton onClick={onEdit}>Edit</AButton>
+            </div>
+          )}
         </div>
       </div>
       <h6 className="mb-1 font-semibold text-black dark:text-white">

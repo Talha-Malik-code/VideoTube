@@ -1,8 +1,11 @@
 import React from "react";
 import { getPlaylistThumbnail } from "../utils/playlistUtils";
+import { useNavigate } from "react-router-dom";
 
 const PlaylistCard = ({ playlist }) => {
+  const navigate = useNavigate();
   const { _id, name, description, videos = [], createdAt } = playlist;
+  const goToPlaylist = () => navigate(`/playlist/${playlist?._id}`);
 
   const thumbnail = getPlaylistThumbnail(playlist);
 
@@ -43,7 +46,7 @@ const PlaylistCard = ({ playlist }) => {
   };
 
   return (
-    <div className="w-full">
+    <div onClick={goToPlaylist} className="w-full">
       <div className="relative mb-2 w-full pt-[56%]">
         <div className="absolute inset-0">
           <img

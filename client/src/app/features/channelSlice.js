@@ -1,5 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { fetchData, updateData, updateWithFormData } from "../../utils";
+import { updateCachedOwnerAvatar } from "./playlistSlice";
 
 const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 
@@ -215,6 +216,18 @@ export const createChannelPlaylist = createAsyncThunk(
   }
 );
 
+// Thunk to update avatar across all slices
+export const updateUserAvatarGlobally = createAsyncThunk(
+  "channel/updateUserAvatarGlobally",
+  async ({ userId, newAvatar }, { dispatch }) => {
+    // Dispatch actions to update avatar in all relevant slices
+    dispatch(updateCachedChannelAvatar({ userId, avatar: newAvatar }));
+    dispatch(updateCachedOwnerAvatar({ userId, newAvatar }));
+
+    return { userId, newAvatar };
+  }
+);
+
 const channelSlice = createSlice({
   name: "channel",
   initialState,
@@ -299,15 +312,60 @@ const channelSlice = createSlice({
       }
     },
     updateCachedChannelAvatar: (state, action) => {
-      const { username, avatar } = action.payload;
-      // Update channelData if cached
-      if (state.cache.channelData[username]) {
-        state.cache.channelData[username].data.avatar = avatar;
-        state.cache.channelData[username].timestamp = Date.now();
+      const { username, avatar, userId } = action.payload;
+
+      // If username is provided, update by username (existing behavior)
+      if (username) {
+        if (state.cache.channelData[username]) {
+          state.cache.channelData[username].data.avatar = avatar;
+          state.cache.channelData[username].timestamp = Date.now();
+        }
+        if (state.channelData.username === username) {
+          state.channelData.avatar = avatar;
+        }
       }
-      // Also update current channelData if it’s the same user
-      if (state.channelData.username === username) {
-        state.channelData.avatar = avatar;
+
+      // If userId is provided, update by userId (new behavior for global updates)
+      if (userId) {
+        // Update current channelData if it matches the userId
+        if (state.channelData._id === userId) {
+          state.channelData.avatar = avatar;
+        }
+
+        // Update all cached channel data entries that match the userId
+        Object.keys(state.cache.channelData).forEach((cachedUsername) => {
+          const cacheEntry = state.cache.channelData[cachedUsername];
+          if (cacheEntry?.data?._id === userId) {
+            cacheEntry.data.avatar = avatar;
+            cacheEntry.timestamp = Date.now();
+          }
+        });
+
+        // Update channel videos cache entries
+        Object.keys(state.cache.channelVideos).forEach((cacheKey) => {
+          const cacheEntry = state.cache.channelVideos[cacheKey];
+          if (cacheEntry?.data?.docs && Array.isArray(cacheEntry.data.docs)) {
+            let videosUpdated = false;
+            cacheEntry.data.docs = cacheEntry.data.docs.map((video) => {
+              if (video.owner?._id === userId) {
+                videosUpdated = true;
+                return {
+                  ...video,
+                  owner: {
+                    ...video.owner,
+                    avatar: avatar,
+                  },
+                };
+              }
+              return video;
+            });
+            if (videosUpdated) {
+              cacheEntry.timestamp = Date.now();
+            }
+          }
+        });
+
+        // Intentionally do not update playlist caches here; will be handled elsewhere
       }
     },
     updateCachedChannelCoverImage: (state, action) => {
@@ -323,27 +381,162 @@ const channelSlice = createSlice({
       }
     },
     updateCachedChannelProfileInfo: (state, action) => {
-      const { username, profileInfo } = action.payload;
-      if (state.cache.channelData[username]) {
-        state.cache.channelData[username].data.fullName = profileInfo.fullName;
-        state.cache.channelData[username].data.email = profileInfo.email;
-        state.cache.channelData[username].timestamp = Date.now();
+      const { username, profileInfo, userId } = action.payload;
+      // Backward compatibility: update by username if provided
+      if (username) {
+        if (state.cache.channelData[username]) {
+          if (typeof profileInfo.fullName === "string") {
+            state.cache.channelData[username].data.fullName =
+              profileInfo.fullName;
+          }
+          if (typeof profileInfo.email === "string") {
+            state.cache.channelData[username].data.email = profileInfo.email;
+          }
+          if (typeof profileInfo.username === "string") {
+            state.cache.channelData[username].data.username =
+              profileInfo.username;
+          }
+          state.cache.channelData[username].timestamp = Date.now();
+        }
+
+        if (state.channelData.username === username) {
+          if (typeof profileInfo.fullName === "string") {
+            state.channelData.fullName = profileInfo.fullName;
+          }
+          if (typeof profileInfo.email === "string") {
+            state.channelData.email = profileInfo.email;
+          }
+          if (typeof profileInfo.username === "string") {
+            state.channelData.username = profileInfo.username;
+          }
+        }
       }
 
-      if (state.channelData.username === username) {
-        state.channelData.fullName = profileInfo.fullName;
-        state.channelData.email = profileInfo.email;
+      // New behavior: update by userId everywhere
+      if (userId) {
+        // Update current channelData if user matches
+        if (state.channelData._id === userId) {
+          if (typeof profileInfo.fullName === "string") {
+            state.channelData.fullName = profileInfo.fullName;
+          }
+          if (typeof profileInfo.email === "string") {
+            state.channelData.email = profileInfo.email;
+          }
+          if (typeof profileInfo.username === "string") {
+            state.channelData.username = profileInfo.username;
+          }
+        }
+
+        // Update all cached channel data entries that match by userId
+        Object.keys(state.cache.channelData).forEach((cachedUsername) => {
+          const cacheEntry = state.cache.channelData[cachedUsername];
+          if (cacheEntry?.data?._id === userId) {
+            if (typeof profileInfo.fullName === "string") {
+              cacheEntry.data.fullName = profileInfo.fullName;
+            }
+            if (typeof profileInfo.email === "string") {
+              cacheEntry.data.email = profileInfo.email;
+            }
+            if (typeof profileInfo.username === "string") {
+              cacheEntry.data.username = profileInfo.username;
+            }
+            cacheEntry.timestamp = Date.now();
+          }
+        });
+
+        // Update channel videos owner fields
+        Object.keys(state.cache.channelVideos).forEach((cacheKey) => {
+          const cacheEntry = state.cache.channelVideos[cacheKey];
+          if (cacheEntry?.data?.docs && Array.isArray(cacheEntry.data.docs)) {
+            let videosUpdated = false;
+            cacheEntry.data.docs = cacheEntry.data.docs.map((video) => {
+              if (video.owner?._id === userId) {
+                videosUpdated = true;
+                return {
+                  ...video,
+                  owner: {
+                    ...video.owner,
+                    ...(typeof profileInfo.fullName === "string"
+                      ? { fullName: profileInfo.fullName }
+                      : {}),
+                    ...(typeof profileInfo.username === "string"
+                      ? { username: profileInfo.username }
+                      : {}),
+                  },
+                };
+              }
+              return video;
+            });
+            if (videosUpdated) {
+              cacheEntry.timestamp = Date.now();
+            }
+          }
+        });
+
+        // Intentionally do not update playlist caches here; will be handled elsewhere
       }
     },
     updateCachedChannelChannelInfo: (state, action) => {
-      const { username, newUsername } = action.payload;
-      if (state.cache.channelData[username]) {
-        state.cache.channelData[username].data.username = newUsername;
-        state.cache.channelData[username].timestamp = Date.now();
+      const { username, newUsername, userId } = action.payload;
+      // If username key is provided, update legacy way and move cache key
+      if (username && typeof newUsername === "string") {
+        const entry = state.cache.channelData[username];
+        if (entry) {
+          entry.data.username = newUsername;
+          entry.timestamp = Date.now();
+          // migrate cache key so future lookups by new username work
+          state.cache.channelData[newUsername] = entry;
+          delete state.cache.channelData[username];
+        }
+        if (state.channelData.username === username) {
+          state.channelData.username = newUsername;
+        }
       }
 
-      if (state.channelData.username === username) {
-        state.channelData.username = newUsername;
+      // Support updating by userId as well
+      if (userId && typeof newUsername === "string") {
+        if (state.channelData._id === userId) {
+          state.channelData.username = newUsername;
+        }
+
+        // Update data and migrate any cache keys whose data matches the userId
+        Object.keys(state.cache.channelData).forEach((cachedUsername) => {
+          const cacheEntry = state.cache.channelData[cachedUsername];
+          if (cacheEntry?.data?._id === userId) {
+            cacheEntry.data.username = newUsername;
+            cacheEntry.timestamp = Date.now();
+            // Move key if it doesn't already exist under newUsername
+            if (!state.cache.channelData[newUsername]) {
+              state.cache.channelData[newUsername] = cacheEntry;
+            }
+            if (cachedUsername !== newUsername) {
+              delete state.cache.channelData[cachedUsername];
+            }
+          }
+        });
+
+        // Update owner.username in channel videos cache
+        Object.keys(state.cache.channelVideos).forEach((cacheKey) => {
+          const cacheEntry = state.cache.channelVideos[cacheKey];
+          if (cacheEntry?.data?.docs && Array.isArray(cacheEntry.data.docs)) {
+            let videosUpdated = false;
+            cacheEntry.data.docs = cacheEntry.data.docs.map((video) => {
+              if (video.owner?._id === userId) {
+                videosUpdated = true;
+                return {
+                  ...video,
+                  owner: { ...video.owner, username: newUsername },
+                };
+              }
+              return video;
+            });
+            if (videosUpdated) {
+              cacheEntry.timestamp = Date.now();
+            }
+          }
+        });
+
+        // Intentionally do not update playlist caches here; will be handled elsewhere
       }
     },
     updateIsSubscribedInSubscribedChannels: (state, action) => {
@@ -378,6 +571,25 @@ const channelSlice = createSlice({
           return channel;
         });
         state.cache.subscribedChannels[currentChannelId].timestamp = Date.now();
+      }
+    },
+    updateChannelPlaylistCacheData: (state, action) => {
+      console.log("Updating channel playlist!");
+
+      const cacheEntry = state.cache.channelPlaylists[action.payload.owner._id];
+      if (cacheEntry && Array.isArray(cacheEntry.data)) {
+        console.log(cacheEntry);
+
+        const updatedPlaylists = cacheEntry.data.map((playlist) => {
+          if (playlist._id === action.payload._id) {
+            // If it's a match, return a *new* object with the updated properties
+            return action.payload;
+          }
+          // Otherwise, return the original object unchanged
+          return playlist;
+        });
+        cacheEntry.data = updatedPlaylists;
+        cacheEntry.timestamp = Date.now();
       }
     },
   },
@@ -571,6 +783,7 @@ export const {
   updateCachedChannelProfileInfo,
   updateCachedChannelChannelInfo,
   updateIsSubscribedInSubscribedChannels,
+  updateChannelPlaylistCacheData,
 } = channelSlice.actions;
 
 export const selectChannelData = (state) => state.channel.channelData;
